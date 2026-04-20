@@ -19,7 +19,7 @@ a refactor touches the relevant code.
 
 - [x] All decryption errors (`AuthenticationFailed`, wrong machine, file not found, etc.) produce **no** stderr output and exit with code **1**
 - [x] `seal` errors (disk full, permission denied) may print a generic message ("seal failed: …") but **never** include the secret, key name, or derived key in the message
-- [ ] `std.debug.panic` and `unreachable` paths are audited — none occur on attacker-controlled input
+- [x] `std.debug.panic` and `unreachable` paths are audited — none occur on attacker-controlled input
 - [x] No error union payload containing key material is ever formatted with `{any}` or `{s}`
 
 ---
@@ -78,10 +78,10 @@ a refactor touches the relevant code.
 
 ## Build & Release
 
-- [ ] Release build uses `-OReleaseSafe` (not `ReleaseFast`) to retain safety checks
-- [ ] `std.builtin.mode` assertion: panic if built in `Debug` mode and `--portable` is not set (dev guard)
-- [ ] Strip debug symbols in release: `exe.strip = true`
-- [ ] CI runs `zig build test` on both Linux and macOS runners
+- [x] Release build uses `-OReleaseSafe` (not `ReleaseFast`) to retain safety checks (`preferred_optimize_mode = .ReleaseSafe` in build.zig)
+- [ ] `std.builtin.mode` assertion: panic if built in `Debug` mode and `--portable` is not set (dev guard) — **skipped**: cost to development workflow outweighs benefit; ReleaseSafe enforced via CI and README instead
+- [x] Strip debug symbols in release: `exe.root_module.strip = true` (applied automatically when `optimize != .Debug`)
+- [x] CI runs `zig build test` on both Linux and macOS runners (`.github/workflows/ci.yml`)
 
 ---
 

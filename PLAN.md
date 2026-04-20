@@ -68,13 +68,13 @@ File: `src/main.zig`
 
 ```
 amulet seal   [--portable] <key> [--file <vault>]
-amulet unseal               <key> [--file <vault>]
-amulet init                      [--file <vault>]
+amulet unseal [--tty]      <key> [--file <vault>]
+amulet init                     [--file <vault>]
 ```
 
 **`seal`** — reads secret value from stdin (never argv), encrypts, appends/updates entry in vault. `--portable` sets `flags` bit 0 in vault header.
 
-**`unseal`** — reads `flags` byte from vault header to auto-detect Locked vs Portable mode. No `--portable` flag needed (and not accepted) — the vault itself carries the mode. Decrypts and prints secret to stdout only. Exits with code 1 on any failure (no diagnostic message).
+**`unseal`** — reads `flags` byte from vault header to auto-detect Locked vs Portable mode. No `--portable` flag needed (and not accepted) — the vault itself carries the mode. Decrypts and prints secret to stdout only. Exits with code 1 on any failure (no diagnostic message). `--tty` reads the passphrase from `/dev/tty` with echo off (same as `seal`); without it, passphrase is read from stdin first line.
 
 **`init`** — creates an empty vault file with header.
 
