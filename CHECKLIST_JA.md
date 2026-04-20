@@ -18,7 +18,7 @@
 
 - [x] 復号エラー（`AuthenticationFailed`、マシン違い、ファイル未存在など）はすべて **stderr への出力なし**、終了コード **1** で即終了
 - [x] `seal` エラー（ディスク満杯、権限エラーなど）は汎用メッセージ（"seal failed: …"）のみ出力 — 秘密情報・キー名・導出鍵は一切含まない
-- [ ] `std.debug.panic` と `unreachable` の経路を監査 — 攻撃者制御入力でいずれも発生しないことを確認
+- [x] `std.debug.panic` と `unreachable` の経路を監査 — 攻撃者制御入力でいずれも発生しないことを確認
 - [x] 鍵マテリアルを含むエラー共用体のペイロードを `{any}` や `{s}` でフォーマットしない
 
 ---
@@ -77,10 +77,10 @@
 
 ## ビルドとリリース
 
-- [ ] リリースビルドは `-OReleaseSafe` を使用（`ReleaseFast` 不可）— 安全性チェックを維持
+- [x] リリースビルドは `-OReleaseSafe` を使用（`ReleaseFast` 不可）— 安全性チェックを維持（build.zig で `preferred_optimize_mode = .ReleaseSafe` に設定）
 - [ ] `std.builtin.mode` アサーション: `Debug` ビルドかつ `--portable` 未指定時にパニック（開発時ガード）
-- [ ] リリース時のデバッグシンボル削除: `exe.strip = true`
-- [ ] CI が Linux と macOS の両ランナーで `zig build test` を実行
+- [x] リリース時のデバッグシンボル削除: `exe.root_module.strip = true`（`optimize != .Debug` 時に自動適用）
+- [x] CI が Linux と macOS の両ランナーで `zig build test` を実行（`.github/workflows/ci.yml`）
 
 ---
 
