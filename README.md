@@ -327,6 +327,27 @@ The same Locked vault cannot be shared across devices. Choose one of:
 
 ---
 
+## Installation
+
+Download the latest binary from [GitHub Releases](https://github.com/Tuki-Sana/amulet/releases):
+
+| OS | File |
+|---|---|
+| Linux (x86_64) | `amulet-linux-x86_64` |
+| macOS (Apple Silicon) | `amulet-macos-aarch64` |
+| macOS (Intel) | `amulet-macos-x86_64` |
+| Windows (x86_64) | `amulet-windows-x86_64.exe` |
+
+**Linux / macOS:**
+```sh
+chmod +x amulet-linux-x86_64
+mv amulet-linux-x86_64 /usr/local/bin/amulet
+```
+
+**Windows:** rename to `amulet.exe` and place it somewhere in your `PATH`.
+
+---
+
 ## Build & Test
 
 ```sh

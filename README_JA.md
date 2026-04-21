@@ -326,6 +326,27 @@ echo -n "<取り出した値>" | amulet seal SECRET_KEY --file secrets.vault
 
 ---
 
+## インストール
+
+[GitHub Releases](https://github.com/Tuki-Sana/amulet/releases) から最新バイナリをダウンロードしてください：
+
+| OS | ファイル |
+|---|---|
+| Linux (x86_64) | `amulet-linux-x86_64` |
+| macOS (Apple Silicon) | `amulet-macos-aarch64` |
+| macOS (Intel) | `amulet-macos-x86_64` |
+| Windows (x86_64) | `amulet-windows-x86_64.exe` |
+
+**Linux / macOS:**
+```sh
+chmod +x amulet-linux-x86_64
+mv amulet-linux-x86_64 /usr/local/bin/amulet
+```
+
+**Windows:** `amulet.exe` にリネームして `PATH` の通ったディレクトリに配置してください。
+
+---
+
 ## ビルド・テスト
 
 ```sh
