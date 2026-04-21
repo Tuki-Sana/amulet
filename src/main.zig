@@ -57,52 +57,84 @@ pub fn main() void {
 
 const CliError = error{Usage};
 
+const Command = enum {
+    help,
+    init,
+    seal,
+    unseal,
+    version,
+    list,
+    delete,
+    verify,
+    re_seal,
+    import,
+    rename,
+    probe,
+};
+
+fn parseCommand(str: []const u8) ?Command {
+    if (std.mem.eql(u8, str, "help") or
+        std.mem.eql(u8, str, "-h") or
+        std.mem.eql(u8, str, "--help")) return .help;
+    if (std.mem.eql(u8, str, "init")) return .init;
+    if (std.mem.eql(u8, str, "seal")) return .seal;
+    if (std.mem.eql(u8, str, "unseal")) return .unseal;
+    if (std.mem.eql(u8, str, "version")) return .version;
+    if (std.mem.eql(u8, str, "list")) return .list;
+    if (std.mem.eql(u8, str, "delete")) return .delete;
+    if (std.mem.eql(u8, str, "verify")) return .verify;
+    if (std.mem.eql(u8, str, "re-seal")) return .re_seal;
+    if (std.mem.eql(u8, str, "import")) return .import;
+    if (std.mem.eql(u8, str, "rename")) return .rename;
+    if (std.mem.eql(u8, str, "probe")) return .probe;
+    return null;
+}
+
 fn run(allocator: std.mem.Allocator) !void {
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) return error.Usage;
 
-    const cmd = args[1];
+    const cmd = parseCommand(args[1]) orelse return error.Usage;
 
-    if (std.mem.eql(u8, cmd, "-h") or std.mem.eql(u8, cmd, "--help") or std.mem.eql(u8, cmd, "help")) {
-        if (args.len != 2) return error.Usage;
-        return cmdHelp();
-    } else if (std.mem.eql(u8, cmd, "init")) {
-        return cmdInit(allocator, args[2..]);
-    } else if (std.mem.eql(u8, cmd, "seal")) {
-        return cmdSeal(allocator, args[2..]);
-    } else if (std.mem.eql(u8, cmd, "unseal")) {
-        cmdUnseal(allocator, args[2..]);
-    } else if (std.mem.eql(u8, cmd, "version")) {
-        if (args.len != 2) return error.Usage;
-        return cmdVersion();
-    } else if (std.mem.eql(u8, cmd, "list")) {
-        if (!argsAreOnlyFileFlagPairs(args[2..])) return error.Usage;
-        return cmdList(allocator, args[2..]);
-    } else if (std.mem.eql(u8, cmd, "delete")) {
-        if (args.len < 3) return error.Usage;
-        const rest = args[2..];
-        if (rest.len < 1 or std.mem.eql(u8, rest[0], "--file")) return error.Usage;
-        if (!argsAreOnlyFileFlagPairs(rest[1..])) return error.Usage;
-        return cmdDelete(allocator, rest);
-    } else if (std.mem.eql(u8, cmd, "verify")) {
-        cmdVerify(allocator, args[2..]);
-    } else if (std.mem.eql(u8, cmd, "re-seal")) {
-        return cmdReSeal(allocator, args[2..]);
-    } else if (std.mem.eql(u8, cmd, "import")) {
-        return cmdImport(allocator, args[2..]);
-    } else if (std.mem.eql(u8, cmd, "rename")) {
-        if (args.len < 4) return error.Usage;
-        const rest = args[2..];
-        if (std.mem.eql(u8, rest[0], "--file") or std.mem.eql(u8, rest[1], "--file")) return error.Usage;
-        if (!argsAreOnlyFileFlagPairs(rest[2..])) return error.Usage;
-        return cmdRename(allocator, rest);
-    } else if (std.mem.eql(u8, cmd, "probe")) {
-        if (args.len != 2) return error.Usage;
-        return cmdProbe(allocator);
-    } else {
-        return error.Usage;
+    switch (cmd) {
+        .help => {
+            if (args.len != 2) return error.Usage;
+            return cmdHelp();
+        },
+        .init => return cmdInit(allocator, args[2..]),
+        .seal => return cmdSeal(allocator, args[2..]),
+        .unseal => cmdUnseal(allocator, args[2..]),
+        .version => {
+            if (args.len != 2) return error.Usage;
+            return cmdVersion();
+        },
+        .list => {
+            if (!argsAreOnlyFileFlagPairs(args[2..])) return error.Usage;
+            return cmdList(allocator, args[2..]);
+        },
+        .delete => {
+            if (args.len < 3) return error.Usage;
+            const rest = args[2..];
+            if (rest.len < 1 or std.mem.eql(u8, rest[0], "--file")) return error.Usage;
+            if (!argsAreOnlyFileFlagPairs(rest[1..])) return error.Usage;
+            return cmdDelete(allocator, rest);
+        },
+        .verify => cmdVerify(allocator, args[2..]),
+        .re_seal => return cmdReSeal(allocator, args[2..]),
+        .import => return cmdImport(allocator, args[2..]),
+        .rename => {
+            if (args.len < 4) return error.Usage;
+            const rest = args[2..];
+            if (std.mem.eql(u8, rest[0], "--file") or std.mem.eql(u8, rest[1], "--file")) return error.Usage;
+            if (!argsAreOnlyFileFlagPairs(rest[2..])) return error.Usage;
+            return cmdRename(allocator, rest);
+        },
+        .probe => {
+            if (args.len != 2) return error.Usage;
+            return cmdProbe(allocator);
+        },
     }
 }
 
