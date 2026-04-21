@@ -72,10 +72,11 @@ fn cmdInit(allocator: std.mem.Allocator, args: [][]u8) !void {
     _ = allocator;
     const vault_path = parseFileFlag(args) orelse default_vault_path;
 
-    const file = std.fs.cwd().createFile(vault_path, .{
-        .exclusive = true,
-        .mode = 0o600,
-    }) catch |err| switch (err) {
+    const file = std.fs.cwd().createFile(vault_path, if (comptime builtin.os.tag == .windows)
+        .{ .exclusive = true }
+    else
+        .{ .exclusive = true, .mode = 0o600 }
+    ) catch |err| switch (err) {
         error.PathAlreadyExists => {
             std.io.getStdErr().writer().print(
                 "init failed: vault already exists: {s}\n",
@@ -302,7 +303,10 @@ fn writeVaultAtomic(
     defer allocator.free(tmp_path);
 
     {
-        const tmp_file = try std.fs.cwd().createFile(tmp_path, .{ .mode = 0o600 });
+        const tmp_file = try std.fs.cwd().createFile(tmp_path, if (comptime builtin.os.tag == .windows)
+            .{}
+        else
+            .{ .mode = 0o600 });
         defer tmp_file.close();
         const writer = tmp_file.writer();
         for (entries) |e| {
