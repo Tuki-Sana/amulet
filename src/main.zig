@@ -336,44 +336,86 @@ fn readPassphraseTty(allocator: std.mem.Allocator) ![]u8 {
     if (comptime builtin.os.tag == .windows) {
         const windows = std.os.windows;
         const ENABLE_ECHO_INPUT: windows.DWORD = 0x0004;
-        const STD_INPUT_HANDLE = @as(windows.DWORD, @bitCast(@as(i32, -10)));
+        const GENERIC_READ: windows.DWORD = 0x80000000;
+        const GENERIC_WRITE: windows.DWORD = 0x40000000;
+        const FILE_SHARE_READ: windows.DWORD = 0x00000001;
+        const FILE_SHARE_WRITE: windows.DWORD = 0x00000002;
+        const OPEN_EXISTING: windows.DWORD = 3;
 
+        const CreateFileW = struct {
+            extern "kernel32" fn CreateFileW(
+                lpFileName: [*:0]const u16,
+                dwDesiredAccess: windows.DWORD,
+                dwShareMode: windows.DWORD,
+                lpSecurityAttributes: ?*anyopaque,
+                dwCreationDisposition: windows.DWORD,
+                dwFlagsAndAttributes: windows.DWORD,
+                hTemplateFile: ?windows.HANDLE,
+            ) callconv(windows.WINAPI) windows.HANDLE;
+        }.CreateFileW;
         const GetConsoleMode = struct {
             extern "kernel32" fn GetConsoleMode(hConsoleHandle: windows.HANDLE, lpMode: *windows.DWORD) callconv(windows.WINAPI) windows.BOOL;
         }.GetConsoleMode;
         const SetConsoleMode = struct {
             extern "kernel32" fn SetConsoleMode(hConsoleHandle: windows.HANDLE, dwMode: windows.DWORD) callconv(windows.WINAPI) windows.BOOL;
         }.SetConsoleMode;
-        const GetStdHandle = struct {
-            extern "kernel32" fn GetStdHandle(nStdHandle: windows.DWORD) callconv(windows.WINAPI) windows.HANDLE;
-        }.GetStdHandle;
+        const CloseHandle = struct {
+            extern "kernel32" fn CloseHandle(hObject: windows.HANDLE) callconv(windows.WINAPI) windows.BOOL;
+        }.CloseHandle;
+        const WriteFile = struct {
+            extern "kernel32" fn WriteFile(
+                hFile: windows.HANDLE,
+                lpBuffer: [*]const u8,
+                nNumberOfBytesToWrite: windows.DWORD,
+                lpNumberOfBytesWritten: ?*windows.DWORD,
+                lpOverlapped: ?*anyopaque,
+            ) callconv(windows.WINAPI) windows.BOOL;
+        }.WriteFile;
+        const ReadFile = struct {
+            extern "kernel32" fn ReadFile(
+                hFile: windows.HANDLE,
+                lpBuffer: [*]u8,
+                nNumberOfBytesToRead: windows.DWORD,
+                lpNumberOfBytesRead: ?*windows.DWORD,
+                lpOverlapped: ?*anyopaque,
+            ) callconv(windows.WINAPI) windows.BOOL;
+        }.ReadFile;
 
-        const h_in = GetStdHandle(STD_INPUT_HANDLE);
+        // Open CONIN$/CONOUT$ directly — works even when stdin/stdout are redirected.
+        const conin_name = std.unicode.utf8ToUtf16LeStringLiteral("CONIN$");
+        const conout_name = std.unicode.utf8ToUtf16LeStringLiteral("CONOUT$");
+        const INVALID_HANDLE = @as(windows.HANDLE, @ptrFromInt(std.math.maxInt(usize)));
+
+        const h_in = CreateFileW(conin_name, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, null, OPEN_EXISTING, 0, null);
+        if (h_in == INVALID_HANDLE) return error.NotATty;
+        defer _ = CloseHandle(h_in);
+
+        const h_out = CreateFileW(conout_name, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, null, OPEN_EXISTING, 0, null);
+        if (h_out == INVALID_HANDLE) return error.NotATty;
+        defer _ = CloseHandle(h_out);
+
         var mode: windows.DWORD = 0;
         if (GetConsoleMode(h_in, &mode) == 0) return error.NotATty;
         const saved_mode = mode;
         if (SetConsoleMode(h_in, mode & ~ENABLE_ECHO_INPUT) == 0) return error.NotATty;
         defer _ = SetConsoleMode(h_in, saved_mode);
 
-        std.io.getStdErr().writeAll("Passphrase: ") catch {};
+        const prompt = "Passphrase: ";
+        _ = WriteFile(h_out, prompt.ptr, prompt.len, null, null);
 
         var buf = std.ArrayList(u8).init(allocator);
         errdefer {
             std.crypto.utils.secureZero(u8, buf.items);
             buf.deinit();
         }
-        std.io.getStdIn().reader().streamUntilDelimiter(
-            buf.writer(),
-            '\n',
-            max_passphrase_len,
-        ) catch |err| switch (err) {
-            error.EndOfStream => {},
-            else => return err,
-        };
-        if (buf.items.len > 0 and buf.items[buf.items.len - 1] == '\r') {
-            buf.items.len -= 1;
+        var byte: [1]u8 = undefined;
+        while (buf.items.len < max_passphrase_len) {
+            var n: windows.DWORD = 0;
+            if (ReadFile(h_in, &byte, 1, &n, null) == 0 or n == 0) break;
+            if (byte[0] == '\n' or byte[0] == '\r') break;
+            try buf.append(byte[0]);
         }
-        std.io.getStdErr().writeAll("\n") catch {};
+        _ = WriteFile(h_out, "\r\n", 2, null, null);
         return buf.toOwnedSlice();
     }
 
