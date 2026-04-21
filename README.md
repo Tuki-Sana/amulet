@@ -65,7 +65,7 @@ amulet init --file secrets.vault
 **2. Store a secret**
 
 ```sh
-echo -n "sk-xxxxxxxx" | amulet seal OPENAI_API_KEY --file secrets.vault
+echo -n "your-secret-value" | amulet seal OPENAI_API_KEY --file secrets.vault
 # Passphrase is prompted in the terminal (echo off). The secret comes via the pipe.
 ```
 

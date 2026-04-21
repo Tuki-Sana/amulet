@@ -35,10 +35,10 @@ amulet init --file secrets.vault
 
 ```sh
 # Locked Mode（デフォルト）: このマシンのハードウェア ID にバインド
-echo -n "sk-xxxxxxxx" | amulet seal OPENAI_API_KEY --file secrets.vault
+echo -n "your-secret-value" | amulet seal OPENAI_API_KEY --file secrets.vault
 
 # Portable Mode: パスフレーズのみ、ハードウェアバインドなし
-echo -n "sk-xxxxxxxx" | amulet seal --portable OPENAI_API_KEY --file secrets.vault
+echo -n "your-secret-value" | amulet seal --portable OPENAI_API_KEY --file secrets.vault
 ```
 
 - パスフレーズは `/dev/tty` でプロンプト（エコーオフ）。秘密は **stdin** のみから読み取ります（argv には載りません）。

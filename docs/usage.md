@@ -35,10 +35,10 @@ Creates an empty vault file (mode `0600` on Unix). Does not ask for a passphrase
 
 ```sh
 # Locked Mode (default): binds to this machine's hardware ID
-echo -n "sk-xxxxxxxx" | amulet seal OPENAI_API_KEY --file secrets.vault
+echo -n "your-secret-value" | amulet seal OPENAI_API_KEY --file secrets.vault
 
 # Portable Mode: passphrase only, no hardware binding
-echo -n "sk-xxxxxxxx" | amulet seal --portable OPENAI_API_KEY --file secrets.vault
+echo -n "your-secret-value" | amulet seal --portable OPENAI_API_KEY --file secrets.vault
 ```
 
 - Passphrase is prompted from `/dev/tty` (echo off). The secret comes from **stdin** only — never from argv.

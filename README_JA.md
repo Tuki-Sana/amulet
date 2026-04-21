@@ -65,7 +65,7 @@ amulet init --file secrets.vault
 **2. 秘密を登録する**
 
 ```sh
-echo -n "sk-xxxxxxxx" | amulet seal OPENAI_API_KEY --file secrets.vault
+echo -n "your-secret-value" | amulet seal OPENAI_API_KEY --file secrets.vault
 # パスフレーズはターミナルでプロンプト（エコーオフ）。秘密はパイプ経由。
 ```
 
