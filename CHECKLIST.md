@@ -81,7 +81,7 @@ a refactor touches the relevant code.
 - [x] Release build uses `-OReleaseSafe` (not `ReleaseFast`) to retain safety checks (`preferred_optimize_mode = .ReleaseSafe` in build.zig)
 - [ ] `std.builtin.mode` assertion: panic if built in `Debug` mode and `--portable` is not set (dev guard) — **skipped**: cost to development workflow outweighs benefit; ReleaseSafe enforced via CI and README instead
 - [x] Strip debug symbols in release: `exe.root_module.strip = true` (applied automatically when `optimize != .Debug`)
-- [x] CI runs `zig build test` on both Linux and macOS runners (`.github/workflows/ci.yml`)
+- [x] CI runs `zig build test` on Linux, macOS, and Windows runners (`.github/workflows/ci.yml`)
 
 ---
 
