@@ -122,6 +122,8 @@ chmod +x ./amulet-macos-aarch64
 sudo mv ./amulet-macos-aarch64 /usr/local/bin/amulet
 ```
 
+その後 `amulet version` を実行すると、リリースビルドでは git タグ（例 `v0.1.0`）、`-Dversion` なしのローカルビルドでは `0.0.0-dev` が表示されます。
+
 `sudo` が使えない場合は、すでに `PATH` の通っているディレクトリに置くか、そのディレクトリを `PATH` に追加してください。
 
 **Windows:** `chmod` は不要です。`amulet.exe` にリネームし、すでに `PATH` の通っているフォルダへ置くか、環境変数の画面でそのフォルダを `PATH` に追加してください。例: ダウンロードフォルダで PowerShell を開き、`bin` を作ってから `Move-Item .\amulet-windows-x86_64.exe "$env:USERPROFILE\bin\amulet.exe"` のように移動します（`bin` は事前に作成）。
@@ -237,7 +239,7 @@ DATABASE_PASSWORD
 
 1. **パスフレーズ** — `seal` のときと同じか。パイプで渡すときは [秘密情報の読み出し（unseal）](#秘密情報の読み出しunseal) と同様に、改行の付け方を含めて正しいか。
 2. **vault のパス** — `--file` が正しい `*.vault` を指し、ファイルが存在するか。
-3. **キー名** — `amulet seal …` と同じ綴りか（大文字・小文字も含めて一致）。
+3. **キー名** — `amulet seal …` と同じ綴りか（大文字・小文字も含めて一致）。`amulet list --file secrets.vault` で登録済みキー名を一覧できます（パスフレーズ不要）。
 4. **Locked モード** — **このマシン**で seal した vault か。別 PC へコピーしただけでは Portable でない限り失敗します。
 5. **終了コード** — 失敗直後に `echo $?`（Unix）または `echo $LASTEXITCODE`（PowerShell）で `1` か確認。
 
@@ -273,6 +275,19 @@ KDF 入力 = Argon2id(passphrase, salt)
 
 ## Vault ファイルフォーマット（バイナリ）
 
+vault ファイルはエントリの列です（ファイル全体のヘッダなし；空ファイル = 空 vault）。
+
+**外側のエントリエンベロープ**（格納済みキーごとに繰り返し）：
+
+```
+[2 byte big-endian]  キー名の長さ
+[キー名の長さ]        キー名（平文）
+[4 byte big-endian]  blob の長さ
+[blob の長さ]         暗号化 blob（レイアウトは下記）
+```
+
+**各エントリの暗号化 blob：**
+
 ```
 [1 byte]  version  = 0x01
 [1 byte]  flags    (bit 0 = portable mode)
@@ -306,6 +321,38 @@ amulet init --file secrets.vault
 ```
 
 空の vault ファイルを作成する。
+
+### キー名の一覧（list）
+
+```sh
+amulet list --file secrets.vault
+```
+
+登録済みキー名を 1 行に 1 つ出力します（vault フォーマット上、キー名は平文インデックスです）。パスフレーズは不要です。vault が無い・読めない・壊れている場合は終了コード 1 で何も出力しません。
+
+### キーの削除（delete）
+
+```sh
+amulet delete OPENAI_API_KEY --file secrets.vault
+```
+
+該当エントリを vault から削除します（パスフレーズ不要）。キーが無い・vault が無い・ファイルが無効な場合は終了コード 1 です。
+
+### マシン ID（probe）
+
+```sh
+amulet probe
+```
+
+Locked モードの seal と同じ取得元のマシン識別子を表示します（トラブルシュート用）。この OS で取得できない場合は終了コード 2（`zig build probe` と同じ慣習）です。
+
+### バージョンとヘルプ
+
+```sh
+amulet version
+amulet help
+# 同義: amulet -h  または  amulet --help
+```
 
 ### 秘密情報の書き込み（seal）
 
@@ -400,16 +447,50 @@ await withSecret('OPENAI_API_KEY', 'secrets.vault', passphraseBuf, async (secret
 
 vault を Compose ベースのワークフローに統合するには、**一時ファイル経由**が最も安定した方法です。
 
+### 手元検証の流れ（一連）
+
+1. **作業ディレクトリ** — `compose.yaml` / `compose.yml` があり、`environment:` などで `${OPENAI_API_KEY}` のように変数を参照している場所へ移動する。
+2. **vault** — 新規なら `amulet init --file secrets.vault` のあと `amulet seal …`。既存ならコピーし、`--file` とキー名を合わせる（`amulet list --file secrets.vault` が便利）。
+3. **シェル** — 一時ファイルのパス・権限・終了時削除:
+
 ```sh
 TMP_ENV=$(mktemp)
 chmod 0600 "$TMP_ENV"
 trap "rm -f '$TMP_ENV'" EXIT
-
-printf "mypassphrase\n" | amulet unseal OPENAI_API_KEY --file secrets.vault > "$TMP_ENV"
-
-docker compose --env-file "$TMP_ENV" up
-# Podman の場合: podman compose --env-file "$TMP_ENV" up
 ```
+
+4. **`KEY=value` の1行を書く**（`--env-file` はこの形式）。**2 行に分ける**書き方を推奨する。一部の **zsh** では `{ printf …; … | unseal; } > "$TMP_ENV"` のように **波かっことパイプを同じリダイレクトにまとめると、`unseal` の出力がファイルに乗らず `OPENAI_API_KEY=` だけになる**ことがある:
+
+```sh
+printf 'OPENAI_API_KEY=' > "$TMP_ENV"
+printf "mypassphrase\n" | amulet unseal OPENAI_API_KEY --file secrets.vault >> "$TMP_ENV"
+```
+
+`mypassphrase` は `seal` 時と同じ実パスフレーズに置き換える。`wc -c "$TMP_ENV"` が **`OPENAI_API_KEY=` の文字数だけ**なら `unseal` が追記されていない → パスフレーズ・キー名・`--file`・Locked のマシン不一致を疑う。
+
+**bash** ではサブシェル1行でも通ることが多い: `( printf 'OPENAI_API_KEY='; printf "mypassphrase\n" | amulet unseal OPENAI_API_KEY --file secrets.vault ) > "$TMP_ENV"`。
+
+5. **Compose 実行** — そのディレクトリで:
+
+```sh
+docker compose --env-file "$TMP_ENV" config
+docker compose --env-file "$TMP_ENV" up
+# Podman: podman compose --env-file "$TMP_ENV" config / up
+```
+
+### macOS での Podman
+
+`podman compose` が接続できないと出るときは Linux VM が止まっていることが多い。**`podman machine start`**（初回のみ **`podman machine init`**）を実行する。`podman compose` が外部の **`docker-compose`** に任せる表示が出ても、`--env-file` の使い方は同じ流れでよい。
+
+### compose.yaml と `$` のエスケープ
+
+Compose は YAML 内の `$VAR` / `${VAR}` を補間する。`command:` などではコンテナのシェル用に **`$$`** と書いて **リテラルの `$`** にする（例: `$$OPENAI_API_KEY`）。**`${#変数名}`** のような bash 専用構文は Compose 的に不正な補間になりやすいので避けるか、エスケープ規則を理解したうえで使う。
+
+### 片付け
+
+- **一時 env:** `rm -f "$TMP_ENV"` か、`trap` を設定したシェルを **`exit`** する。
+- **Compose のリソース:** プロジェクトディレクトリで **`docker compose down`** または **`podman compose down`**。
+- **`down` 時の WARN:** `--env-file` を付けずに `down` すると `OPENAI_API_KEY` が未設定だと警告することがあるが、**削除処理自体には通常影響しない**。警告を消したいときだけ、ファイルが残っている間に **`--env-file "$TMP_ENV"` を付けて `down`** すればよい。
 
 > **注意:** 一時ファイルはディスクに短時間平文が出ます。「開発用ブリッジ」と位置づけ、`trap` による削除を必ず設定してください。本番環境では CI のシークレット注入（GitHub Actions secrets 等）を使用してください。
 
@@ -518,8 +599,10 @@ amulet/
 ├── src/
 │   ├── probe_id.zig   # OS別 machine-ID 取得
 │   ├── crypto.zig     # Argon2id + ChaCha20-Poly1305 暗号コア
-│   ├── main.zig       # CLI (seal / unseal / init)
-│   └── schema.zig     # comptime キー名バリデーション
+│   └── main.zig       # CLI (seal / unseal / init)。ディスク上はエントリ列
+├── docs/
+│   ├── getting-started.md
+│   └── getting-started-ja.md
 ├── wrappers/
 │   └── node/
 │       └── amulet.ts  # Node.js/TypeScript ラッパー

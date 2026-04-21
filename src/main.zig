@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const build_options = @import("build_options");
 const crypto_mod = @import("crypto.zig");
 const probe_id = @import("probe_id.zig");
 
@@ -64,15 +65,95 @@ fn run(allocator: std.mem.Allocator) !void {
 
     const cmd = args[1];
 
-    if (std.mem.eql(u8, cmd, "init")) {
+    if (std.mem.eql(u8, cmd, "-h") or std.mem.eql(u8, cmd, "--help") or std.mem.eql(u8, cmd, "help")) {
+        if (args.len != 2) return error.Usage;
+        return cmdHelp();
+    } else if (std.mem.eql(u8, cmd, "init")) {
         return cmdInit(allocator, args[2..]);
     } else if (std.mem.eql(u8, cmd, "seal")) {
         return cmdSeal(allocator, args[2..]);
     } else if (std.mem.eql(u8, cmd, "unseal")) {
         cmdUnseal(allocator, args[2..]);
+    } else if (std.mem.eql(u8, cmd, "version")) {
+        if (args.len != 2) return error.Usage;
+        return cmdVersion();
+    } else if (std.mem.eql(u8, cmd, "list")) {
+        if (!argsAreOnlyFileFlagPairs(args[2..])) return error.Usage;
+        return cmdList(allocator, args[2..]);
+    } else if (std.mem.eql(u8, cmd, "delete")) {
+        if (args.len < 3) return error.Usage;
+        const rest = args[2..];
+        if (rest.len < 1 or std.mem.eql(u8, rest[0], "--file")) return error.Usage;
+        if (!argsAreOnlyFileFlagPairs(rest[1..])) return error.Usage;
+        return cmdDelete(allocator, rest);
+    } else if (std.mem.eql(u8, cmd, "probe")) {
+        if (args.len != 2) return error.Usage;
+        return cmdProbe(allocator);
     } else {
         return error.Usage;
     }
+}
+
+fn cmdVersion() !void {
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("{s}\n", .{build_options.version});
+}
+
+fn cmdHelp() !void {
+    try std.io.getStdOut().writeAll(usageText());
+}
+
+fn cmdList(allocator: std.mem.Allocator, args: [][]u8) !void {
+    const vault_path = parseFileFlag(args) orelse default_vault_path;
+    var entries = loadVault(allocator, vault_path) catch std.process.exit(1);
+    defer {
+        for (entries.items) |e| e.deinit(allocator);
+        entries.deinit();
+    }
+    const stdout = std.io.getStdOut().writer();
+    for (entries.items) |e| {
+        try stdout.print("{s}\n", .{e.key});
+    }
+}
+
+fn cmdDelete(allocator: std.mem.Allocator, rest: [][]u8) !void {
+    const key_name = rest[0];
+    if (key_name.len == 0 or key_name.len > max_key_name_len) return error.Usage;
+    const vault_path = parseFileFlag(rest[1..]) orelse default_vault_path;
+
+    var entries = loadVault(allocator, vault_path) catch std.process.exit(1);
+    defer {
+        for (entries.items) |e| e.deinit(allocator);
+        entries.deinit();
+    }
+
+    var found = false;
+    var i: usize = 0;
+    while (i < entries.items.len) {
+        if (std.mem.eql(u8, entries.items[i].key, key_name)) {
+            entries.items[i].deinit(allocator);
+            _ = entries.swapRemove(i);
+            found = true;
+            break;
+        } else {
+            i += 1;
+        }
+    }
+    if (!found) std.process.exit(1);
+
+    writeVaultAtomic(allocator, vault_path, entries.items) catch std.process.exit(1);
+}
+
+fn cmdProbe(allocator: std.mem.Allocator) !void {
+    const id = probe_id.getMachineId(allocator) catch |err| {
+        std.process.exit(switch (err) {
+            error.NotFound => 2,
+            else => 1,
+        });
+    };
+    defer allocator.free(id);
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("{s}\n", .{id});
 }
 
 // ── init ──────────────────────────────────────────────────────────────────────
@@ -310,6 +391,7 @@ fn writeVaultAtomic(
 ) !void {
     const tmp_path = try std.fmt.allocPrint(allocator, "{s}.tmp", .{vault_path});
     defer allocator.free(tmp_path);
+    errdefer std.fs.cwd().deleteFile(tmp_path) catch {};
 
     {
         const tmp_file = try std.fs.cwd().createFile(tmp_path, if (comptime builtin.os.tag == .windows)
@@ -500,15 +582,39 @@ fn parseFileFlag(args: [][]u8) ?[]const u8 {
     return null;
 }
 
-fn printUsage() void {
-    std.io.getStdErr().writer().writeAll(
+/// True when `args` is empty or only repeated `--file <path>` pairs (no stray tokens).
+fn argsAreOnlyFileFlagPairs(args: [][]u8) bool {
+    var i: usize = 0;
+    while (i < args.len) {
+        if (std.mem.eql(u8, args[i], "--file")) {
+            if (i + 1 >= args.len) return false;
+            i += 2;
+        } else return false;
+    }
+    return true;
+}
+
+fn usageText() []const u8 {
+    return (
         \\Usage:
+        \\  amulet help | -h | --help
+        \\  amulet version
+        \\  amulet probe
+        \\  amulet list                            [--file <vault>]
+        \\  amulet delete             <key>       [--file <vault>]
         \\  amulet init                            [--file <vault>]
         \\  amulet seal   [--portable] <key>       [--file <vault>]
         \\  amulet unseal [--tty]      <key>       [--file <vault>]
         \\
+        \\  list:   key names only (one per line), no passphrase
+        \\  delete: remove one key from the vault (passphrase not required)
+        \\  probe:  print machine ID for this host (same source as Locked-mode seal)
         \\  seal:   passphrase prompted from /dev/tty (echo off), secret read from stdin
         \\  unseal: passphrase read from stdin (first line); use --tty for interactive echo-off prompt
         \\
-    ) catch {};
+    );
+}
+
+fn printUsage() void {
+    std.io.getStdErr().writeAll(usageText()) catch {};
 }

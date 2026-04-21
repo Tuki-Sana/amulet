@@ -122,6 +122,8 @@ chmod +x ./amulet-macos-aarch64
 sudo mv ./amulet-macos-aarch64 /usr/local/bin/amulet
 ```
 
+Then run `amulet version` — release builds print the git tag (for example `v0.1.0`); local builds without `-Dversion` show `0.0.0-dev`.
+
 If `sudo` is not an option, put the binary in any directory that is already on your `PATH`, or add its folder to `PATH`.
 
 **Windows:** there is no `chmod` step. Rename to `amulet.exe`, then move it into a folder that is already on your `PATH` (or add that folder in System Settings → Environment Variables). From PowerShell in the download folder, for example: `Move-Item .\amulet-windows-x86_64.exe "$env:USERPROFILE\bin\amulet.exe"` after creating `bin` if needed.
@@ -237,7 +239,7 @@ That usually means decryption failed — Amulet **does not print why** (by desig
 
 1. **Passphrase** — Same as at `seal`; when piping, include the trailing newline exactly as in [Read a secret (unseal)](#read-a-secret-unseal).
 2. **Vault path** — `--file` points to the correct `*.vault` and the file exists.
-3. **Key name** — Exact spelling (case-sensitive), same as in `amulet seal …`.
+3. **Key name** — Exact spelling (case-sensitive), same as in `amulet seal …`. Run `amulet list --file secrets.vault` to print registered key names (no passphrase).
 4. **Locked mode** — The entry was sealed on **this** machine; a vault copied from another PC fails until you use Portable mode or re-seal on this machine.
 5. **Exit code** — After failure: `echo $?` (Unix) or `echo $LASTEXITCODE` (PowerShell) should be `1`.
 
@@ -273,6 +275,19 @@ KDF input = Argon2id(passphrase, salt)
 
 ## Vault File Format (binary)
 
+A vault file is a sequence of entries (no global header; empty file = empty vault).
+
+**Outer entry envelope** (one per stored key, repeated):
+
+```
+[2 byte big-endian]  key name length
+[key name length]    key name (plaintext)
+[4 byte big-endian]  blob length
+[blob length]        encrypted blob (layout below)
+```
+
+**Per-entry encrypted blob:**
+
 ```
 [1 byte]  version  = 0x01
 [1 byte]  flags    (bit 0 = portable mode)
@@ -306,6 +321,38 @@ amulet init --file secrets.vault
 ```
 
 Creates an empty vault file.
+
+### List key names
+
+```sh
+amulet list --file secrets.vault
+```
+
+Prints one key name per line (vault format stores names in plaintext). No passphrase. Fails with exit code 1 if the vault is missing, unreadable, or corrupt.
+
+### Delete a key
+
+```sh
+amulet delete OPENAI_API_KEY --file secrets.vault
+```
+
+Removes that entry from the vault without a passphrase. Exit code 1 if the key is missing, the vault is missing, or the file is invalid.
+
+### Machine ID (`probe`)
+
+```sh
+amulet probe
+```
+
+Prints the same machine identifier used for Locked-mode sealing (for troubleshooting). Exit code 2 if the ID cannot be read on this OS (same convention as `zig build probe`).
+
+### Version and help
+
+```sh
+amulet version
+amulet help
+# same as: amulet -h   or   amulet --help
+```
 
 ### Write a secret (seal)
 
@@ -401,16 +448,50 @@ If you generate a plaintext `.env`, treat it as a development bridge only — en
 
 The most reliable way to integrate a vault into a Compose-based workflow is via a **temporary file**.
 
+### End-to-end (local verification)
+
+1. **Project directory** — use a folder that contains `compose.yaml` / `compose.yml` and references variables such as `${OPENAI_API_KEY}` in `environment:` (or elsewhere Compose interpolates).
+2. **Vault** — `amulet init --file secrets.vault` then `amulet seal …` if starting fresh; otherwise copy an existing vault and match `--file` and key names (`amulet list --file secrets.vault` helps).
+3. **Shell session** — create the temp env path, restrict permissions, and delete on shell exit:
+
 ```sh
 TMP_ENV=$(mktemp)
 chmod 0600 "$TMP_ENV"
 trap "rm -f '$TMP_ENV'" EXIT
-
-printf "mypassphrase\n" | amulet unseal OPENAI_API_KEY --file secrets.vault > "$TMP_ENV"
-
-docker compose --env-file "$TMP_ENV" up
-# For Podman: podman compose --env-file "$TMP_ENV" up
 ```
+
+4. **Write one `KEY=value` line** (`--env-file` requires that shape). Prefer **two commands** so every shell merges stdout reliably; some **zsh** versions do not merge `{ printf …; … | unseal; } > "$TMP_ENV"` the way you expect (you can end up with only `OPENAI_API_KEY=` and no secret bytes):
+
+```sh
+printf 'OPENAI_API_KEY=' > "$TMP_ENV"
+printf "mypassphrase\n" | amulet unseal OPENAI_API_KEY --file secrets.vault >> "$TMP_ENV"
+```
+
+Replace `mypassphrase` with your real passphrase (same as at `seal`). If `wc -c "$TMP_ENV"` equals only the length of the `OPENAI_API_KEY=` prefix, `unseal` did not append — fix passphrase, key name, `--file`, or Locked-mode machine mismatch before continuing.
+
+On **bash**, a subshell one-liner often works: `( printf 'OPENAI_API_KEY='; printf "mypassphrase\n" | amulet unseal OPENAI_API_KEY --file secrets.vault ) > "$TMP_ENV"`.
+
+5. **Run Compose** from that directory:
+
+```sh
+docker compose --env-file "$TMP_ENV" config
+docker compose --env-file "$TMP_ENV" up
+# Podman: podman compose --env-file "$TMP_ENV" config / up
+```
+
+### Podman on macOS
+
+If `podman compose` reports it cannot connect to Podman, start the Linux VM: `podman machine start` (run `podman machine init` once first if you have no machine yet). `podman compose` may delegate to an external `docker-compose`; both honor `--env-file` the same way for this workflow.
+
+### Compose YAML and `$` escaping
+
+Compose interpolates `$VAR` / `${VAR}` in many YAML strings. In `command:` blocks, use **`$$`** so the **container shell** receives a literal `$` (for example `$$OPENAI_API_KEY` instead of `$OPENAI_API_KEY`). Avoid bash-only expansions such as `${#VAR}` in YAML unless you know how to escape them — Compose treats `${#…}` as invalid interpolation.
+
+### Teardown
+
+- **Temp env:** `rm -f "$TMP_ENV"` or exit the shell that registered `trap … EXIT`.
+- **Compose resources:** from the project directory, `docker compose down` or `podman compose down`.
+- **Warning on `down`:** if you run `… compose down` **without** `--env-file`, Compose may warn that `OPENAI_API_KEY` is unset; that is usually harmless for removal. Passing the same `--env-file "$TMP_ENV"` (while the file still exists) silences it.
 
 > **Note:** The temporary file briefly holds plaintext on disk. Treat it as a development bridge and always use `trap` to ensure deletion. In production, use CI secret injection instead.
 
@@ -519,8 +600,10 @@ amulet/
 ├── src/
 │   ├── probe_id.zig   # OS-specific machine-ID retrieval
 │   ├── crypto.zig     # Argon2id + ChaCha20-Poly1305 crypto core
-│   ├── main.zig       # CLI (seal / unseal / init)
-│   └── schema.zig     # comptime key name validation
+│   └── main.zig       # CLI (seal / unseal / init); on-disk vault = entry sequence
+├── docs/
+│   ├── getting-started.md
+│   └── getting-started-ja.md
 ├── wrappers/
 │   └── node/
 │       └── amulet.ts  # Node.js/TypeScript wrapper

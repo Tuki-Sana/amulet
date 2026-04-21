@@ -1,6 +1,8 @@
 # Amulet — Master Plan
 Hardware-Bound, Zero-Trace Secret Manager
 
+> **Note (implementation truth, 2026):** This document is a design history. If anything disagrees with the source tree, **the code and [README](README.md) win**. Items marked *not implemented* were planned but deferred.
+
 ---
 
 ## Vision
@@ -41,12 +43,20 @@ File: `src/crypto.zig`
 - Output: 32-byte derived key
 
 **Encryption**
-- Algorithm: **ChaCha20-Poly1305** (preferred — constant-time on all platforms, no hardware dependency)
-- AES-256-GCM available as compile-time alternative for hardware-AES environments
+- Algorithm: **ChaCha20-Poly1305** only (constant-time on all platforms, no hardware dependency). *AES-256-GCM was considered as an optional compile-time alternative but is **not implemented**.*
 - Nonce: 12-byte random from `std.crypto.random`
 - AAD: vault format version byte (for future-proofing)
 
-**Vault File Format** (binary, fixed layout)
+**On-disk vault file** (`src/main.zig`): a **sequence of entries** — no global file header. An empty file is a valid empty vault.
+
+```
+[2 byte big-endian]  key name length
+[key length]         key name (plaintext index)
+[4 byte big-endian]  blob length
+[blob length]        one encrypted blob (layout below)
+```
+
+**Per-entry encrypted blob** (`src/crypto.zig` — binary, fixed layout inside each blob)
 
 ```
 [1 byte]  version = 0x01
@@ -58,9 +68,8 @@ File: `src/crypto.zig`
 ```
 
 **Memory Safety**
-- All key material in `[32]u8` stack arrays
-- `std.crypto.utils.secureZero` called in `defer` blocks immediately after last use
-- No heap allocation for secret material
+- Derived key held in a stack `[32]u8`; zeroed via `secureZero` in `defer` immediately after last use
+- Intermediate heap buffers (`kdf_input`, `ciphertext`) are zeroed with `secureZero` before `allocator.free`
 
 ---
 
@@ -77,13 +86,11 @@ amulet init                     [--file <vault>]
 
 **`unseal`** — reads `flags` byte from vault header to auto-detect Locked vs Portable mode. No `--portable` flag needed (and not accepted) — the vault itself carries the mode. Decrypts and prints secret to stdout only. Exits with code 1 on any failure (no diagnostic message). `--tty` reads the passphrase from `/dev/tty` with echo off (same as `seal`); without it, passphrase is read from stdin first line.
 
-**`init`** — creates an empty vault file with header.
+**`init`** — creates an **empty** vault file (zero bytes, mode `0600` on Unix). There is **no** vault-wide header at the file level; “empty file = empty vault.”
 
-**stdin protocol**: value is read until EOF or `\0`. The raw bytes (no trailing newline) become the plaintext.
+**stdin protocol (`seal`)**: After the passphrase is read from `/dev/tty`, the **entire stdin stream until EOF** is read as the secret (`readToEndAlloc` in `main.zig`). Whatever bytes arrive (including a trailing newline from `echo`) become the plaintext — there is **no** `\0` delimiter in the current implementation.
 
-**Schema validation** (comptime): `schema.zig` declares a `comptime []const []const u8` of known key names. `amulet unseal <key>` triggers a compile-time check that `<key>` is in the schema — catching typos at build time in consumer code.
-
-> Note: runtime key lookup remains; comptime check is for wrapper code that uses `@field` or hard-coded key literals.
+**Comptime key-name schema (`schema.zig`)** — *not implemented.* The shipped `amulet` binary resolves key names at **runtime** only. A future optional Zig helper could add compile-time validation for embedded consumers; it is **not** a goal for the core CLI.
 
 ---
 
