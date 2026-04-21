@@ -338,6 +338,14 @@ amulet delete OPENAI_API_KEY --file secrets.vault
 
 該当エントリを vault から削除します（パスフレーズ不要）。キーが無い・vault が無い・ファイルが無効な場合は終了コード 1 です。
 
+### キーの改名（rename）
+
+```sh
+amulet rename OLD_KEY_NAME NEW_KEY_NAME --file secrets.vault
+```
+
+vault インデックス上のキー名だけを変更します（パスフレーズ不要・blob の再暗号化なし）。旧キーが無い・新キーがすでに存在する・vault が無効な場合は終了コード 1 です。
+
 ### マシン ID（probe）
 
 ```sh

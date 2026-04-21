@@ -338,6 +338,14 @@ amulet delete OPENAI_API_KEY --file secrets.vault
 
 Removes that entry from the vault without a passphrase. Exit code 1 if the key is missing, the vault is missing, or the file is invalid.
 
+### Rename a key
+
+```sh
+amulet rename OLD_KEY_NAME NEW_KEY_NAME --file secrets.vault
+```
+
+Renames a key in the vault index without a passphrase and without re-encrypting the blob. Exit code 1 if the old key is missing, the new key already exists, or the vault is invalid.
+
 ### Machine ID (`probe`)
 
 ```sh

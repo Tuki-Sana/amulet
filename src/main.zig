@@ -86,6 +86,12 @@ fn run(allocator: std.mem.Allocator) !void {
         if (rest.len < 1 or std.mem.eql(u8, rest[0], "--file")) return error.Usage;
         if (!argsAreOnlyFileFlagPairs(rest[1..])) return error.Usage;
         return cmdDelete(allocator, rest);
+    } else if (std.mem.eql(u8, cmd, "rename")) {
+        if (args.len < 4) return error.Usage;
+        const rest = args[2..];
+        if (std.mem.eql(u8, rest[0], "--file") or std.mem.eql(u8, rest[1], "--file")) return error.Usage;
+        if (!argsAreOnlyFileFlagPairs(rest[2..])) return error.Usage;
+        return cmdRename(allocator, rest);
     } else if (std.mem.eql(u8, cmd, "probe")) {
         if (args.len != 2) return error.Usage;
         return cmdProbe(allocator);
@@ -140,6 +146,33 @@ fn cmdDelete(allocator: std.mem.Allocator, rest: [][]u8) !void {
         }
     }
     if (!found) std.process.exit(1);
+
+    writeVaultAtomic(allocator, vault_path, entries.items) catch std.process.exit(1);
+}
+
+fn cmdRename(allocator: std.mem.Allocator, rest: [][]u8) !void {
+    const old_key = rest[0];
+    const new_key = rest[1];
+    if (old_key.len == 0 or old_key.len > max_key_name_len) return error.Usage;
+    if (new_key.len == 0 or new_key.len > max_key_name_len) return error.Usage;
+    const vault_path = parseFileFlag(rest[2..]) orelse default_vault_path;
+
+    var entries = loadVault(allocator, vault_path) catch std.process.exit(1);
+    defer {
+        for (entries.items) |e| e.deinit(allocator);
+        entries.deinit();
+    }
+
+    var old_idx: ?usize = null;
+    for (entries.items, 0..) |e, i| {
+        if (std.mem.eql(u8, e.key, old_key)) old_idx = i;
+        if (std.mem.eql(u8, e.key, new_key)) std.process.exit(1); // new key already exists
+    }
+    const idx = old_idx orelse std.process.exit(1); // old key not found
+
+    const new_key_copy = allocator.dupe(u8, new_key) catch std.process.exit(1);
+    allocator.free(entries.items[idx].key);
+    entries.items[idx].key = new_key_copy;
 
     writeVaultAtomic(allocator, vault_path, entries.items) catch std.process.exit(1);
 }
@@ -602,12 +635,14 @@ fn usageText() []const u8 {
         \\  amulet probe
         \\  amulet list                            [--file <vault>]
         \\  amulet delete             <key>       [--file <vault>]
+        \\  amulet rename             <old> <new> [--file <vault>]
         \\  amulet init                            [--file <vault>]
         \\  amulet seal   [--portable] <key>       [--file <vault>]
         \\  amulet unseal [--tty]      <key>       [--file <vault>]
         \\
         \\  list:   key names only (one per line), no passphrase
         \\  delete: remove one key from the vault (passphrase not required)
+        \\  rename: rename a key in the vault index (no passphrase, no re-encryption)
         \\  probe:  print machine ID for this host (same source as Locked-mode seal)
         \\  seal:   passphrase prompted from /dev/tty (echo off), secret read from stdin
         \\  unseal: passphrase read from stdin (first line); use --tty for interactive echo-off prompt
