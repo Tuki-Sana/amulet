@@ -184,11 +184,11 @@ docker compose --env-file "$TMP_ENV" up
 
 ## 環境別運用ガイド：Locked vs Portable
 
-Locked Mode は vault を1台のマシンに縛ります。強い隔離を提供しますが、複数環境では設計が必要です。
+Locked Mode では、vault は別マシンに持ち出せても**別マシンでは復号できません**（ciphertext のコピー自体は可能）。デフォルトはローカル／単一ホスト向けの設計で、CI やコンテナでは Portable や他ツールとの組み合わせが基本です。
 
 | 環境 | 推奨モード | 理由 |
 |------|-----------|------|
-| 本番の固定サーバ | **Locked** | machine_id が安定している。他のマシンでは復号不可 |
+| 本番の固定サーバ | **Locked** | machine_id が安定している。vault をコピーされても別マシンでは復号不可 |
 | 開発者の個人PC | **Locked**（各自） | 各開発者が自分のマシンで seal する |
 | CI（GitHub Actions 等） | **Portable** | ランナーが毎回変わり machine_id が安定しない |
 | コンテナ / Kubernetes | **Portable** | Pod の machine_id が安定しないことが多い |

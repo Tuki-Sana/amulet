@@ -185,11 +185,11 @@ Process substitution (`<(amulet unseal …)`) also works but is bash-specific an
 
 ## Deployment Guide: Locked vs Portable
 
-Locked Mode binds a vault to a single machine — strong isolation, but requires deliberate design in multi-environment setups.
+With Locked Mode, a vault can be copied to another machine but **cannot be decrypted there** (the ciphertext itself is portable). Amulet is designed primarily for local and single-host use; CI and container environments typically combine Portable mode or other secret management tools.
 
 | Environment | Recommended mode | Reason |
 |-------------|-----------------|--------|
-| Production fixed server | **Locked** | Stable machine_id; vault cannot be decrypted elsewhere |
+| Production fixed server | **Locked** | Stable machine_id; vault can be copied but not decrypted on another machine |
 | Developer laptop | **Locked** (per person) | Each developer seals on their own machine |
 | CI (GitHub Actions, etc.) | **Portable** | Runner instances change each run — machine_id is unstable |
 | Containers / Kubernetes | **Portable** | Pod machine_id is often unstable |
