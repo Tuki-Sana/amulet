@@ -39,6 +39,8 @@ Amulet はその逆を狙っています。
 
 ## インストール
 
+> **前提:** ターミナルでコマンドを実行し、ファイルのパスを扱えること。
+
 [GitHub Releases](https://github.com/Tuki-Sana/amulet/releases) から最新バイナリをダウンロードしてください：
 
 | OS | ファイル |

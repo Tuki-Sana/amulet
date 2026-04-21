@@ -39,6 +39,8 @@ Amulet is the opposite.
 
 ## Installation
 
+> **Prerequisites:** familiarity with running commands in a terminal and basic file path handling.
+
 Download the latest binary from [GitHub Releases](https://github.com/Tuki-Sana/amulet/releases):
 
 | OS | File |
