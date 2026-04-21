@@ -1326,3 +1326,60 @@ test "reSealEntry: plaintext is preserved after re-seal" {
     }
     try std.testing.expectEqualStrings("my-secret-value", pt);
 }
+
+// ── parseCommand ──────────────────────────────────────────────────────────────
+
+test "parseCommand: known commands" {
+    const cases = .{
+        .{ "seal", Command.seal },
+        .{ "unseal", Command.unseal },
+        .{ "list", Command.list },
+        .{ "delete", Command.delete },
+        .{ "rename", Command.rename },
+        .{ "verify", Command.verify },
+        .{ "re-seal", Command.re_seal },
+        .{ "import", Command.import },
+        .{ "probe", Command.probe },
+        .{ "version", Command.version },
+        .{ "init", Command.init },
+        .{ "help", Command.help },
+        .{ "-h", Command.help },
+        .{ "--help", Command.help },
+    };
+    inline for (cases) |c| {
+        try std.testing.expectEqual(c[1], parseCommand(c[0]).?);
+    }
+}
+
+test "parseCommand: unknown command returns null" {
+    try std.testing.expect(parseCommand("") == null);
+    try std.testing.expect(parseCommand("re_seal") == null);
+    try std.testing.expect(parseCommand("SEAL") == null);
+    try std.testing.expect(parseCommand("--seal") == null);
+}
+
+// ── argsAreOnlyFileFlagPairs ──────────────────────────────────────────────────
+
+test "argsAreOnlyFileFlagPairs: empty slice" {
+    var args = [_][]u8{};
+    try std.testing.expect(argsAreOnlyFileFlagPairs(&args));
+}
+
+test "argsAreOnlyFileFlagPairs: single valid pair" {
+    var file_flag = "--file".*;
+    var path = "x.vault".*;
+    var args = [_][]u8{ &file_flag, &path };
+    try std.testing.expect(argsAreOnlyFileFlagPairs(&args));
+}
+
+test "argsAreOnlyFileFlagPairs: stray token rejected" {
+    var stray = "extra".*;
+    var args = [_][]u8{&stray};
+    try std.testing.expect(!argsAreOnlyFileFlagPairs(&args));
+}
+
+test "argsAreOnlyFileFlagPairs: --file without value rejected" {
+    var file_flag = "--file".*;
+    var args = [_][]u8{&file_flag};
+    try std.testing.expect(!argsAreOnlyFileFlagPairs(&args));
+}
