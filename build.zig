@@ -10,9 +10,9 @@ pub fn build(b: *std.Build) void {
     // for restricting supported target set are available.
     const target = b.standardTargetOptions(.{});
 
-    // Default to ReleaseSafe to preserve runtime safety checks.
-    // ReleaseFast is intentionally not the default — safety checks must stay on.
-    const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseSafe });
+    // ReleaseSafe is the recommended mode. Use: zig build -Doptimize=ReleaseSafe
+    // ReleaseFast is intentionally not recommended — safety checks must stay on.
+    const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
         .name = "amulet",
@@ -34,11 +34,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
-    // Strip debug symbols on release builds.
-    if (optimize != .Debug) {
-        exe.root_module.strip = true;
-    }
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
