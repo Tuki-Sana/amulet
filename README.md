@@ -149,8 +149,11 @@ amulet/
 │   └── main.zig            # CLI dispatch and vault I/O
 ├── docs/
 │   ├── usage.md            # CLI reference
+│   ├── usage-ja.md
 │   ├── security.md         # Vault format, crypto spec, threat model
+│   ├── security-ja.md
 │   ├── deployment.md       # Deployment, migration, Docker Compose
+│   ├── deployment-ja.md
 │   ├── getting-started.md  # Terminal basics for newcomers
 │   └── getting-started-ja.md
 ├── wrappers/
