@@ -11,6 +11,32 @@ Amulet is a CLI tool that encrypts secrets (API keys, tokens, passwords, etc.) a
 
 ---
 
+## Why Amulet?
+
+Tools like Infisical, HashiCorp Vault, and AWS Secrets Manager excel at team sharing, audit logs, and fine-grained access control — but they come with server setup and operational overhead.
+
+Amulet is the opposite.
+
+| | Existing secret management platforms | Amulet |
+|---|---|---|
+| Setup | Server or cloud account required | Single binary |
+| Team sharing | ✅ Great | ❌ Out of scope (single-machine) |
+| Network dependency | Yes | None (fully local) |
+| Hardware binding | No | ✅ Locked Mode |
+| AI agent protection | Indirect | Structurally designed in |
+
+**Amulet is a good fit if you:**
+- Are a solo developer, freelancer, or one-person team
+- Want secrets to stay local without running a server
+- Use AI agents or vibe coding and want structural protection against secret leakage
+- Want something lightweight you can start using immediately
+
+**Amulet is not the right tool if you:**
+- Need to share secrets across a team → consider Infisical or Vault
+- Work primarily in CI/container environments → combine with your cloud provider's Secrets Manager
+
+---
+
 ## Quick Start (Vibe Coding / AI-assisted Development)
 
 > When working with AI tools (Cursor, Claude Code, etc.), the AI may suggest `.env` patterns. Use Amulet instead. Amulet reduces exposure through leak-prone paths, but pasting secrets into chat or following outdated AI suggestions is a separate problem — mindful habits matter too.
