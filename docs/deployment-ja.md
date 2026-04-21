@@ -70,7 +70,7 @@ chmod 0600 "$TMP_ENV"
 trap "rm -f '$TMP_ENV'" EXIT
 ```
 
-> **任意の改善（Linux）:** 平文をディスクに書き込まないようにするには、`mktemp -p /dev/shm` または `mktemp -p "${XDG_RUNTIME_DIR:-/tmp}"` でメモリ上の tmpfs を使う方法があります。macOS には `/dev/shm` がないため、macOS では通常の `mktemp` を使ってください。
+> **任意の改善 ― ディスクへの書き込みを減らす（Linux）:** `/dev/shm` が存在する場合（多くのディストリビューションで tmpfs）は `mktemp -p /dev/shm` が有力な選択肢です。デスクトップのログインセッションなど `$XDG_RUNTIME_DIR` が設定されている環境では `mktemp -p "$XDG_RUNTIME_DIR"` もよく使われるパターンです。ただし `:-/tmp` のフォールバックは付けないでください — `/tmp` が tmpfs とは限らず効果がなくなります。いずれもベストエフォートであり、スワップやストレージの構成によっては完全な保証はできません。macOS には `/dev/shm` がないため、macOS では通常の `mktemp` で構いません。
 
 **2. `KEY=value` の1行を書く。** 2 コマンドに分けるのを推奨します — 一部の zsh では同じリダイレクト内にまとめると `unseal` の出力がファイルに乗らないことがあります:
 
