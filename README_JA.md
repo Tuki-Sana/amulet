@@ -89,6 +89,7 @@ KDF 入力 = Argon2id(passphrase ‖ 0x00 ‖ machine_id, salt)
 
 - Linux: `/etc/machine-id`（fallback: `/var/lib/dbus/machine-id`）
 - macOS: `IOPlatformUUID`（`ioreg` 経由）
+- Windows: `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid`（`reg query` 経由）
 
 ### Portable Mode（`--portable` 付きで seal した場合）
 
@@ -338,7 +339,7 @@ zig build probe
 zig build test
 ```
 
-**対応 OS:** Linux（systemd ホスト）、macOS
+**対応 OS:** Linux（systemd ホスト）、macOS、Windows
 
 ---
 

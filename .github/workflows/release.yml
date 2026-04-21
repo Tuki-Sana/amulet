@@ -13,12 +13,19 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-linux-musl
             artifact: amulet-linux-x86_64
+            ext: ""
           - os: macos-latest
             target: aarch64-macos
             artifact: amulet-macos-aarch64
+            ext: ""
           - os: macos-latest
             target: x86_64-macos
             artifact: amulet-macos-x86_64
+            ext: ""
+          - os: windows-latest
+            target: x86_64-windows
+            artifact: amulet-windows-x86_64
+            ext: ".exe"
 
     runs-on: ${{ matrix.os }}
 
@@ -33,14 +40,19 @@ jobs:
       - name: Build
         run: zig build -Doptimize=ReleaseSafe -Dtarget=${{ matrix.target }}
 
-      - name: Rename binary
+      - name: Rename binary (Unix)
+        if: runner.os != 'Windows'
         run: cp zig-out/bin/amulet ${{ matrix.artifact }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: cp zig-out/bin/amulet.exe ${{ matrix.artifact }}.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}${{ matrix.ext }}
 
   release:
     needs: build

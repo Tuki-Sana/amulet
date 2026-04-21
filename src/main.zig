@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const crypto_mod = @import("crypto.zig");
 const probe_id = @import("probe_id.zig");
 
@@ -315,8 +316,11 @@ fn writeVaultAtomic(
     try std.fs.cwd().rename(tmp_path, vault_path);
 }
 
-/// Open vault read-only with O_NOFOLLOW to prevent symlink attacks.
+/// Open vault read-only. On POSIX, O_NOFOLLOW prevents symlink attacks.
 fn openVaultReadOnly(path: []const u8) !std.fs.File {
+    if (comptime builtin.os.tag == .windows) {
+        return std.fs.cwd().openFile(path, .{});
+    }
     const flags: std.posix.O = .{
         .NOFOLLOW = true,
         .ACCMODE = .RDONLY,
@@ -327,8 +331,52 @@ fn openVaultReadOnly(path: []const u8) !std.fs.File {
 
 // ── Input helpers ─────────────────────────────────────────────────────────────
 
-/// Read passphrase from /dev/tty with echo disabled. Prompts "Passphrase: ".
+/// Read passphrase with echo disabled. Prompts "Passphrase: " on the terminal.
 fn readPassphraseTty(allocator: std.mem.Allocator) ![]u8 {
+    if (comptime builtin.os.tag == .windows) {
+        const windows = std.os.windows;
+        const ENABLE_ECHO_INPUT: windows.DWORD = 0x0004;
+        const STD_INPUT_HANDLE = @as(windows.DWORD, @bitCast(@as(i32, -10)));
+
+        const GetConsoleMode = struct {
+            extern "kernel32" fn GetConsoleMode(hConsoleHandle: windows.HANDLE, lpMode: *windows.DWORD) callconv(windows.WINAPI) windows.BOOL;
+        }.GetConsoleMode;
+        const SetConsoleMode = struct {
+            extern "kernel32" fn SetConsoleMode(hConsoleHandle: windows.HANDLE, dwMode: windows.DWORD) callconv(windows.WINAPI) windows.BOOL;
+        }.SetConsoleMode;
+        const GetStdHandle = struct {
+            extern "kernel32" fn GetStdHandle(nStdHandle: windows.DWORD) callconv(windows.WINAPI) windows.HANDLE;
+        }.GetStdHandle;
+
+        const h_in = GetStdHandle(STD_INPUT_HANDLE);
+        var mode: windows.DWORD = 0;
+        if (GetConsoleMode(h_in, &mode) == 0) return error.NotATty;
+        const saved_mode = mode;
+        if (SetConsoleMode(h_in, mode & ~ENABLE_ECHO_INPUT) == 0) return error.NotATty;
+        defer _ = SetConsoleMode(h_in, saved_mode);
+
+        std.io.getStdErr().writeAll("Passphrase: ") catch {};
+
+        var buf = std.ArrayList(u8).init(allocator);
+        errdefer {
+            std.crypto.utils.secureZero(u8, buf.items);
+            buf.deinit();
+        }
+        std.io.getStdIn().reader().streamUntilDelimiter(
+            buf.writer(),
+            '\n',
+            max_passphrase_len,
+        ) catch |err| switch (err) {
+            error.EndOfStream => {},
+            else => return err,
+        };
+        if (buf.items.len > 0 and buf.items[buf.items.len - 1] == '\r') {
+            buf.items.len -= 1;
+        }
+        std.io.getStdErr().writeAll("\n") catch {};
+        return buf.toOwnedSlice();
+    }
+
     const tty = try std.fs.openFileAbsolute("/dev/tty", .{ .mode = .read_write });
     defer tty.close();
 

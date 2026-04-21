@@ -16,10 +16,11 @@ subprocesses. Decryption silently fails on wrong machine, wrong passphrase, or w
 ### M1 — Environment Survey (Phase 2)
 Verify hardware-ID retrieval on each target OS before touching crypto code.
 
-| OS     | Source                              | Command / API                          |
-|--------|-------------------------------------|----------------------------------------|
-| Linux  | `/etc/machine-id`                   | `std.fs.File.readAll`                  |
-| macOS  | IOPlatformUUID (IOKit registry)     | `IOServiceGetMatchingService` via syscall or shell-out to `ioreg -rd1 -c IOPlatformExpertDevice` |
+| OS      | Source                              | Command / API                          |
+|---------|-------------------------------------|----------------------------------------|
+| Linux   | `/etc/machine-id`                   | `std.fs.File.readAll`                  |
+| macOS   | IOPlatformUUID (IOKit registry)     | `IOServiceGetMatchingService` via syscall or shell-out to `ioreg -rd1 -c IOPlatformExpertDevice` |
+| Windows | `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid` | `reg query` shell-out |
 
 Deliverable: standalone `probe_id.zig` that prints the trimmed UUID on both platforms and exits non-zero if unavailable.
 
@@ -102,18 +103,17 @@ No Node.js wrapper has access to the raw key material; it only passes opaque `Bu
 
 ## OS Strategy Summary
 
-| Concern              | Linux                        | macOS                          |
-|----------------------|------------------------------|--------------------------------|
-| Machine ID source    | `/etc/machine-id` (128-bit hex + newline) | `IOPlatformUUID` via `ioreg`  |
-| Availability         | Guaranteed on systemd hosts  | Guaranteed on all modern macOS |
-| Stability            | Survives reboots, not reinstalls | Survives reboots, not logic board swaps |
-| Fallback             | `/var/lib/dbus/machine-id`   | None needed                    |
-| Portable mode bypass | `--portable` skips machine-id | Same                          |
+| Concern              | Linux                        | macOS                          | Windows                                   |
+|----------------------|------------------------------|--------------------------------|-------------------------------------------|
+| Machine ID source    | `/etc/machine-id` (128-bit hex + newline) | `IOPlatformUUID` via `ioreg`  | `MachineGuid` via `reg query`             |
+| Availability         | Guaranteed on systemd hosts  | Guaranteed on all modern macOS | Guaranteed on all Windows versions        |
+| Stability            | Survives reboots, not reinstalls | Survives reboots, not logic board swaps | Survives reboots, not OS reinstalls  |
+| Fallback             | `/var/lib/dbus/machine-id`   | None needed                    | None needed                               |
+| Portable mode bypass | `--portable` skips machine-id | Same                          | Same                                      |
 
 ---
 
 ## Non-Goals
-- Windows support (not in scope)
 - Network-bound key management (TPM/HSM integration is future work)
 - Secret rotation automation
 - Multi-user vault sharing

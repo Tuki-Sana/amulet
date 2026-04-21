@@ -21,6 +21,7 @@ pub fn getMachineId(allocator: std.mem.Allocator) ![]u8 {
     return switch (@import("builtin").os.tag) {
         .linux => getMachineIdLinux(allocator),
         .macos => getMachineIdMacos(allocator),
+        .windows => getMachineIdWindows(allocator),
         else => error.UnsupportedPlatform,
     };
 }
@@ -66,6 +67,35 @@ fn parseIoregUuid(allocator: std.mem.Allocator, output: []const u8) ?[]u8 {
     return allocator.dupe(u8, uuid) catch null;
 }
 
+fn getMachineIdWindows(allocator: std.mem.Allocator) ![]u8 {
+    const argv = [_][]const u8{
+        "reg", "query",
+        "HKLM\\SOFTWARE\\Microsoft\\Cryptography",
+        "/v", "MachineGuid",
+    };
+    const result = try std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = &argv,
+        .max_output_bytes = 4096,
+    });
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    if (result.term != .Exited or result.term.Exited != 0) return error.NotFound;
+    return parseMachineGuid(allocator, result.stdout) orelse error.NotFound;
+}
+
+fn parseMachineGuid(allocator: std.mem.Allocator, output: []const u8) ?[]u8 {
+    const needle = "REG_SZ";
+    const pos = std.mem.indexOf(u8, output, needle) orelse return null;
+    var i = pos + needle.len;
+    while (i < output.len and (output[i] == ' ' or output[i] == '\t')) i += 1;
+    const guid_start = i;
+    while (i < output.len and output[i] != '\r' and output[i] != '\n') i += 1;
+    const guid = std.mem.trim(u8, output[guid_start..i], &std.ascii.whitespace);
+    if (guid.len == 0) return null;
+    return allocator.dupe(u8, guid) catch null;
+}
+
 test "parseIoregUuid extracts UUID" {
     const allocator = std.testing.allocator;
     const sample =
@@ -80,5 +110,24 @@ test "parseIoregUuid extracts UUID" {
 test "parseIoregUuid returns null on missing key" {
     const allocator = std.testing.allocator;
     const result = parseIoregUuid(allocator, "no uuid here");
+    try std.testing.expect(result == null);
+}
+
+test "parseMachineGuid extracts GUID" {
+    const allocator = std.testing.allocator;
+    const sample =
+        \\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography
+        \\    MachineGuid    REG_SZ    12345678-1234-1234-1234-123456789abc
+        \\
+    ;
+    const result = parseMachineGuid(allocator, sample);
+    defer if (result) |r| allocator.free(r);
+    try std.testing.expect(result != null);
+    try std.testing.expectEqualStrings("12345678-1234-1234-1234-123456789abc", result.?);
+}
+
+test "parseMachineGuid returns null on missing key" {
+    const allocator = std.testing.allocator;
+    const result = parseMachineGuid(allocator, "no guid here");
     try std.testing.expect(result == null);
 }
