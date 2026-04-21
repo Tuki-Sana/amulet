@@ -207,6 +207,47 @@ The simplest approach that scales well:
 
 ---
 
+## Migration, Multi-Device, and Disaster Recovery
+
+### Vault file backup ≠ recoverable backup for Locked vaults
+
+Copying a Locked vault file is not a useful backup — the copy cannot be decrypted on a different machine because the machine_id will not match.
+
+| Backup type | Contents | Recoverable on another machine? |
+|-------------|----------|--------------------------------|
+| Vault file copy | Encrypted binary | ❌ Cannot decrypt without matching machine_id |
+| Plaintext unsealed on old machine | Raw secret value | ✅ Can be re-sealed on new machine |
+| Portable vault copy | Decryptable with passphrase alone | ✅ Works on any machine |
+
+### Planned machine migration
+
+While the old machine is still running, follow these steps:
+
+```sh
+# Unseal on the old machine to extract the plaintext
+printf "mypassphrase\n" | amulet unseal SECRET_KEY --file secrets.vault
+
+# Re-seal on the new machine (Locked binds to the new machine_id)
+echo -n "<extracted value>" | amulet seal SECRET_KEY --file secrets.vault
+```
+
+### Sudden machine failure
+
+If the old machine becomes unbootable, a Locked vault **cannot be recovered**. Prepare in advance:
+
+- Keep secrets in a separate secure location (password manager, etc.) as well
+- Or maintain a Portable vault as an offline backup
+
+### Multi-device development
+
+The same Locked vault cannot be shared across devices. Choose one of:
+
+- **Separate vault per device** — each device seals its own (independent Locked vaults)
+- **Shared Portable vault** — share the passphrase securely and use the same vault everywhere
+- **Portable for development, Locked for production** — mix modes per environment
+
+---
+
 ## Security Design Principles
 
 | Principle | Description |
