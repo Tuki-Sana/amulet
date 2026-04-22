@@ -12,7 +12,7 @@
 | コンテナ / Kubernetes | **Portable** | Pod の machine_id が安定しない・共有されることが多い。パスフレーズの強度とシークレット注入経路の安全性が主な防御線となる。 |
 | 移行・検証用途 | **Portable** | 別マシンでの復号が意図的に必要な場合。 |
 
-> **OS 再インストール・ハードウェア交換時の注意:** machine_id が変わると Locked vault は復号不能になります（Linux: OS 再インストール、macOS: マザーボード交換）。runbook に復旧手順を記載してください。
+> **OS 再インストール・machine_id 変化時の注意:** machine_id が変わると Locked vault は復号不能になります（Linux: OS 再インストール、macOS: ロジックボード交換、Windows: OS のクリーンインストールやイメージの復元など）。runbook に復旧手順を記載してください。
 
 **チームでの基本パターン:**
 - 本番ホスト: サーバ上で seal・unseal（Locked）
@@ -23,7 +23,7 @@
 
 #### Locked の脅威モデル
 
-Locked は KDF 入力を OS が公開するマシン識別子（Linux: `/etc/machine-id`、macOS: `IOPlatformUUID`、Windows: レジストリの `MachineGuid`）にバインドします。vault ファイルだけが攻撃者の手に渡った場合（machine_id が異なる）、認証付き復号が成立せずシークレットは取り出せません（Argon2id へのブルートフォースを前提としなければ破れない）。ただし、攻撃者がすでに同一ホスト上でシェルを持っている場合は machine_id もプロセスメモリや環境変数も読み取れます — ホスト自体のセキュリティ保護が引き続き必要です。
+Locked は Argon2id の password 入力に OS が公開するマシン識別子（Linux: `/etc/machine-id`、macOS: `IOPlatformUUID`、Windows: レジストリの `MachineGuid`）を混ぜ込みます。vault ファイルだけが攻撃者の手に渡った場合（machine_id が異なる）、認証付き復号が成立せずシークレットは取り出せません（Argon2id へのブルートフォースを前提としなければ破れない）。ただし、攻撃者がすでに同一ホスト上でシェルを持っている場合は machine_id もプロセスメモリや環境変数も読み取れます — ホスト自体のセキュリティ保護が引き続き必要です。
 
 #### VM クローンと machine-id の一意性
 

@@ -62,10 +62,11 @@ File: `src/crypto.zig`
 ```
 [1 byte]  version = 0x01
 [1 byte]  flags   (bit 0 = portable mode)
-[16 byte] argon2id salt
+[16 byte] Argon2id salt
 [12 byte] ChaCha20-Poly1305 nonce
 [4 byte]  ciphertext length (big-endian u32)
-[N byte]  ciphertext + 16-byte Poly1305 tag
+[N byte]  ciphertext (N = length from the preceding field)
+[16 byte] Poly1305 authentication tag
 ```
 
 **Memory Safety**
@@ -115,7 +116,7 @@ No Node.js wrapper has access to the raw key material; it only passes opaque `Bu
 |----------------------|------------------------------|--------------------------------|-------------------------------------------|
 | Machine ID source    | `/etc/machine-id` (128-bit hex + newline) | `IOPlatformUUID` via `ioreg`  | `MachineGuid` via `reg query`             |
 | Availability         | Guaranteed on systemd hosts  | Guaranteed on all modern macOS | Guaranteed on all Windows versions        |
-| Stability            | Survives reboots, not reinstalls | Survives reboots, not logic board swaps | Survives reboots, not OS reinstalls  |
+| Stability            | Survives reboots, not reinstalls | Survives reboots, not logic board swaps | Survives reboots; usually survives hardware changes; may change on clean OS install or image restore |
 | Fallback             | `/var/lib/dbus/machine-id`   | None needed                    | None needed                               |
 | Portable mode bypass | `--portable` skips machine-id | Same                          | Same                                      |
 

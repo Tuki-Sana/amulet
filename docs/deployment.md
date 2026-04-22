@@ -12,7 +12,7 @@
 | Containers / Kubernetes | **Portable** | Pod machine_id is often unstable or shared. Passphrase strength and secure secret injection are the primary controls. |
 | Migration / recovery | **Portable** | Cross-machine decryption is intentional. |
 
-> **OS reinstall / hardware replacement:** Locked vaults become unrecoverable if machine_id changes. Include a recovery procedure in your runbook (see below).
+> **OS reinstall / machine identity change:** Locked vaults become unrecoverable if machine_id changes (e.g. Linux: OS reinstall; macOS: logic board swap; Windows: clean OS install or image restore). Include a recovery procedure in your runbook (see below).
 
 **Team pattern:**
 - Production hosts: seal and unseal on the server itself (Locked)
@@ -23,7 +23,7 @@
 
 #### Locked threat model
 
-Locked binds the KDF input to the OS-reported machine identifier (`/etc/machine-id` on Linux, `IOPlatformUUID` on macOS, `MachineGuid` in the registry on Windows). This means: if only the vault file reaches an attacker's machine (different machine_id), authenticated decryption fails and the secret is unrecoverable without brute-forcing Argon2id. If the attacker already has a shell on the same host, they can read machine_id and the passphrase from process memory or environment — host-level security is still required.
+Locked mixes the OS-reported machine identifier into the Argon2id password input (`/etc/machine-id` on Linux, `IOPlatformUUID` on macOS, `MachineGuid` in the registry on Windows). This means: if only the vault file reaches an attacker's machine (different machine_id), authenticated decryption fails and the secret is unrecoverable without brute-forcing Argon2id. If the attacker already has a shell on the same host, they can read machine_id and the passphrase from process memory or environment — host-level security is still required.
 
 #### VM clones and machine-id uniqueness
 

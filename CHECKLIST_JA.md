@@ -38,7 +38,7 @@
 - [x] Argon2id `m_cost` = 65536 KiB（64 MiB）— GPU 攻撃への耐性
 - [x] Argon2id `t_cost` = 3 回 — 時間・メモリトレードオフ攻撃への耐性
 - [x] ソルトは CSPRNG による 16 バイト乱数（vault ヘッダに保存）— どちらのモードでもハードコードしない
-- [x] `--portable` モードでは、同じ 16 バイト CSPRNG ソルトを Argon2id に使用し、machine_id を KDF 入力に混入しない。vault ヘッダ `flags` bit 0 をセット
+- [x] `--portable` モードでは、同じ 16 バイト CSPRNG ソルトを Argon2id に使用し、machine_id を Argon2id の password 入力に混入しない。vault ヘッダ `flags` bit 0 をセット
 - [x] 導出鍵は正確に 32 バイト
 
 ---
@@ -55,7 +55,7 @@
 
 ## マシン ID バインディング
 
-- [x] machine_id を KDF 入力として使用する前に空白・改行をトリム（Linux: `std.mem.trim`、macOS: UUID を直接抽出）
+- [x] machine_id を Argon2id の password 入力に混ぜる前に空白・改行をトリム（Linux: `std.mem.trim`、macOS: UUID を直接抽出）
 - [x] Linux: まず `/etc/machine-id` を試み、次に `/var/lib/dbus/machine-id` にフォールバック。両方なければ終了コード 1（弱い値へのサイレントフォールバックなし）
 - [x] macOS: `ioreg` 出力から UUID をパース。パース失敗時は終了コード 1
 - [x] machine_id をパスフレーズと `passphrase ‖ 0x00 ‖ machine_id` として結合（null セパレータで長さ拡張攻撃を防ぐ）

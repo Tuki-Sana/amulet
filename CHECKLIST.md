@@ -39,7 +39,7 @@ a refactor touches the relevant code.
 - [x] Argon2id `m_cost` = 65536 KiB (64 MiB) — resists GPU attacks
 - [x] Argon2id `t_cost` = 3 — resists time-memory trade-off attacks
 - [x] Salt is 16 bytes of CSPRNG output (stored in vault header) — never hardcoded in either mode
-- [x] In `--portable` mode, the same 16-byte CSPRNG salt (from vault header) is used for Argon2id; machine_id is simply not mixed into the KDF input; vault header `flags` bit 0 is set
+- [x] In `--portable` mode, the same 16-byte CSPRNG salt (from vault header) is used for Argon2id; machine_id is simply not mixed into the Argon2id password input; vault header `flags` bit 0 is set
 - [x] Derived key is exactly 32 bytes
 
 ---
@@ -56,7 +56,7 @@ a refactor touches the relevant code.
 
 ## machine_id Binding
 
-- [x] machine_id is trimmed of whitespace/newlines before use as KDF input (`std.mem.trim` on Linux; UUID extracted directly on macOS)
+- [x] machine_id is trimmed of whitespace/newlines before mixing into the Argon2id password input (`std.mem.trim` on Linux; UUID extracted directly on macOS)
 - [x] On Linux: try `/etc/machine-id` first, fallback to `/var/lib/dbus/machine-id`; if both missing, exit with code 1 (no silent fallback to a weak value)
 - [x] On macOS: UUID parsed from `ioreg` output; if parsing fails, exit with code 1
 - [x] machine_id is concatenated with passphrase as `passphrase ‖ 0x00 ‖ machine_id` (null separator prevents length-extension confusion)

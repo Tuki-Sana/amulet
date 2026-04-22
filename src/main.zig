@@ -813,7 +813,7 @@ fn loadVault(allocator: std.mem.Allocator, path: []const u8) !std.ArrayList(Entr
         try reader.readNoEof(key);
 
         const blob_len = try reader.readInt(u32, .big);
-        // Upper bound: max_secret_len plaintext + crypto overhead (salt+nonce+len+tag = 50 bytes)
+        // Upper bound: max_secret_len plaintext + crypto overhead (version+flags+salt+nonce+len+tag = 50 bytes)
         if (blob_len > max_secret_len + 128) return error.InvalidVault;
         const blob = try allocator.alloc(u8, blob_len);
         errdefer allocator.free(blob);

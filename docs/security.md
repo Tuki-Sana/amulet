@@ -4,10 +4,10 @@
 
 ### Locked Mode (default)
 
-The vault entry can only be decrypted on a machine with the same machine_id as the one that sealed it. The machine identifier is mixed into the KDF input:
+The vault entry can only be decrypted on a machine with the same machine_id as the one that sealed it. The machine identifier is mixed into the Argon2id password input together with the passphrase:
 
 ```
-KDF input = Argon2id(passphrase ‖ 0x00 ‖ machine_id, salt)
+AEAD key = Argon2id(passphrase ‖ 0x00 ‖ machine_id, salt)
 ```
 
 | OS | Machine ID source |
@@ -16,14 +16,14 @@ KDF input = Argon2id(passphrase ‖ 0x00 ‖ machine_id, salt)
 | macOS | `IOPlatformUUID` via `ioreg` |
 | Windows | `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid` via `reg query` |
 
-**Stability:** survives reboots, not OS reinstalls (Linux) or logic board swaps (macOS).
+**Stability:** survives reboots, not OS reinstalls (Linux) or logic board swaps (macOS); on Windows, `MachineGuid` usually survives hardware changes but may change on a clean OS install or image restore.
 
 ### Portable Mode (`--portable` on seal)
 
-machine_id is not mixed into the KDF — the passphrase alone is sufficient to decrypt, on any machine.
+machine_id is not mixed into the Argon2id password input — the passphrase alone (with salt) derives the key, on any machine.
 
 ```
-KDF input = Argon2id(passphrase, salt)
+AEAD key = Argon2id(passphrase, salt)
 ```
 
 - `flags` bit 0 in the vault entry header is set to 1.
@@ -55,8 +55,11 @@ A vault file is a flat sequence of entries. There is no global file header; an e
 [16 byte] Argon2id salt  (CSPRNG random, per seal)
 [12 byte] ChaCha20-Poly1305 nonce (CSPRNG random, per seal)
 [4 byte]  ciphertext length (big-endian u32)
-[N byte]  ciphertext + 16-byte Poly1305 authentication tag
+[N byte]  ciphertext (N = length from the preceding field)
+[16 byte] Poly1305 authentication tag
 ```
+
+`N` is the byte length of the ciphertext field only; the Poly1305 tag is not included. For ChaCha20-Poly1305, ciphertext length equals plaintext length, so `N` is also the size of the sealed secret in memory (implementation records `plaintext.len` in this field).
 
 Key names are stored in plaintext in the outer envelope. Only the secret **value** is encrypted.
 
