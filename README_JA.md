@@ -139,6 +139,12 @@ zig build probe                     # machine_id 取得の動作確認
 
 ---
 
+## リリース（メンテナ向け）
+
+`v` で始まるタグを push すると [Release ワークフロー](.github/workflows/release.yml) が走ります。手順は [RELEASING-ja.md](RELEASING-ja.md)（[English](RELEASING.md)）を参照してください。
+
+---
+
 ## プロジェクト構成
 
 ```
@@ -161,5 +167,7 @@ amulet/
 │       └── amulet.ts       # Node.js/TypeScript ラッパー
 ├── PLAN_JA.md
 ├── CHECKLIST_JA.md
+├── RELEASING-ja.md         # メンテナ: バージョンタグと GitHub Release
+├── RELEASING.md
 └── README_JA.md
 ```

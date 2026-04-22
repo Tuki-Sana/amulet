@@ -139,6 +139,12 @@ zig build probe                     # verify machine_id retrieval
 
 ---
 
+## Releasing (maintainers)
+
+Pushing a tag matching `v*` triggers the [Release workflow](.github/workflows/release.yml). Step-by-step: [RELEASING.md](RELEASING.md) · [日本語](RELEASING-ja.md).
+
+---
+
 ## Project Structure
 
 ```
@@ -161,5 +167,7 @@ amulet/
 │       └── amulet.ts       # Node.js/TypeScript wrapper
 ├── PLAN.md
 ├── CHECKLIST.md
+├── RELEASING.md            # maintainer: version tag & GitHub Release
+├── RELEASING-ja.md
 └── README.md
 ```
