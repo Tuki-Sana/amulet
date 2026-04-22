@@ -2,7 +2,7 @@
 
 ## Overview
 
-Amulet is a CLI tool that encrypts secrets (API keys, tokens, passwords, etc.) and binds them to the **OS-reported machine identifier of the sealing host**.
+Amulet is a CLI tool that encrypts secrets (API keys, tokens, passwords, etc.) and binds them to the **OS-reported machine identifier of the sealing host** (`machine_id` — read from `/etc/machine-id` on Linux, IOPlatformUUID on macOS, MachineGuid on Windows).
 
 - Store secrets in an encrypted vault file — not in `.env` files.
 - Secret values are never passed as command-line arguments; they are read from stdin.

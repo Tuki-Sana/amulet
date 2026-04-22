@@ -2,7 +2,7 @@
 
 ## 概要
 
-Amulet は、秘密情報（API キー・トークン・パスワード等）を **seal したホストの OS が報告するマシン識別子** に暗号化バインドする CLI ツールです。
+Amulet は、秘密情報（API キー・トークン・パスワード等）を **seal したホストの OS が報告するマシン識別子**（`machine_id` — Linux では `/etc/machine-id`、macOS では IOPlatformUUID、Windows では MachineGuid から読む）に暗号化バインドする CLI ツールです。
 
 - 秘密は `.env` には書かず、**暗号化した vault ファイル**に入れます。
 - 秘密の値はコマンドライン引数に載せません。必要なときは **stdin** から渡します。
