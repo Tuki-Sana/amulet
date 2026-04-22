@@ -95,11 +95,13 @@ Key names are stored in plaintext in the outer envelope. Only the secret **value
 |--------|-----------|
 | AI agent reads env vars or repo files | No `.env` — secrets only in vault file |
 | Process list / argv sniffing | Secret read from stdin, not argv |
-| Vault copied to another machine | Argon2id binds to machine_id in Locked Mode |
+| Vault copied to a host with a different machine_id | Argon2id binds to machine_id in Locked Mode |
 | Weak passphrase | Argon2id with 64 MiB memory cost |
 | Cold-boot / memory dump | `secureZero` after use; minimal heap exposure |
 | Log injection / exfiltration | No logging of secret material; silent failure |
 | Symlink attack on vault file | `O_NOFOLLOW` on open |
 | Nonce reuse | Fresh CSPRNG nonce per `seal` call |
+
+> **VM clones:** Amulet treats any two hosts sharing the same machine_id as equivalent. A vault sealed on one instance can be decrypted on any clone with a duplicate ID. Regenerate machine-id on each instance after cloning. See [deployment.md](deployment.md) for details.
 
 **Scope:** Amulet reduces **accidental** exposure in everyday developer workflows. If the OS is already compromised or malware controls your terminal, no CLI tool provides full protection.
