@@ -132,7 +132,7 @@ Use Locked for laptops and production servers. Use Portable for CI runners, cont
 ```sh
 zig build -Doptimize=ReleaseSafe   # build
 zig build test                      # run unit tests (23 tests)
-zig build probe                     # verify machine-ID retrieval
+zig build probe                     # verify machine_id retrieval
 ```
 
 **Supported OS:** Linux (systemd host), macOS, Windows
@@ -144,7 +144,7 @@ zig build probe                     # verify machine-ID retrieval
 ```
 amulet/
 ├── src/
-│   ├── probe_id.zig        # OS-specific machine-ID retrieval
+│   ├── probe_id.zig        # OS-specific machine_id retrieval
 │   ├── crypto.zig          # Argon2id + ChaCha20-Poly1305 crypto core
 │   └── main.zig            # CLI dispatch and vault I/O
 ├── docs/

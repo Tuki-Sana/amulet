@@ -132,7 +132,7 @@ DATABASE_PASSWORD
 ```sh
 zig build -Doptimize=ReleaseSafe   # ビルド
 zig build test                      # ユニットテスト（23 本）
-zig build probe                     # machine-ID 取得の動作確認
+zig build probe                     # machine_id 取得の動作確認
 ```
 
 **対応 OS:** Linux（systemd ホスト）、macOS、Windows
@@ -144,7 +144,7 @@ zig build probe                     # machine-ID 取得の動作確認
 ```
 amulet/
 ├── src/
-│   ├── probe_id.zig        # OS別 machine-ID 取得
+│   ├── probe_id.zig        # OS別 machine_id 取得
 │   ├── crypto.zig          # Argon2id + ChaCha20-Poly1305 暗号コア
 │   └── main.zig            # CLI ディスパッチと vault I/O
 ├── docs/
