@@ -2,7 +2,7 @@
 
 ## Overview
 
-Amulet is a CLI tool that encrypts secrets (API keys, tokens, passwords, etc.) and binds them to a **specific physical machine**.
+Amulet is a CLI tool that encrypts secrets (API keys, tokens, passwords, etc.) and binds them to the **OS-reported machine identifier of the sealing host**.
 
 - Store secrets in an encrypted vault file — not in `.env` files.
 - Secret values are never passed as command-line arguments; they are read from stdin.
@@ -101,7 +101,7 @@ DATABASE_PASSWORD
 
 ### Unseal prints nothing?
 
-Check in order: passphrase (same as at `seal`) → vault path (`--file`) → key name (case-sensitive, `amulet list` confirms) → Locked mode (sealed on this machine?).
+Check in order: passphrase (same as at `seal`) → vault path (`--file`) → key name (case-sensitive, `amulet list` confirms) → Locked mode (same machine_id as when sealed?).
 
 ---
 
@@ -109,7 +109,7 @@ Check in order: passphrase (same as at `seal`) → vault path (`--file`) → key
 
 | Mode | Sealed with | Decryptable on |
 |------|------------|----------------|
-| **Locked** (default) | passphrase + machine hardware ID | Same machine only |
+| **Locked** (default) | passphrase + OS machine identifier | Any host with the same machine_id |
 | **Portable** (`--portable`) | passphrase only | Any machine |
 
 Use Locked for laptops and production servers. Use Portable for CI runners, containers, and migration. See [docs/security.md](docs/security.md) for KDF details and [docs/deployment.md](docs/deployment.md) for a decision table.

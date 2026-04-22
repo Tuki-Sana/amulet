@@ -7,16 +7,17 @@ Hardware-Bound, Zero-Trace Secret Manager
 
 ## Vision
 
-Amulet is a CLI tool that encrypts secrets and binds them to a specific physical machine.
-No plaintext secrets ever touch disk. No `.env` files. No leak surface for AI agents or
-subprocesses. Decryption silently fails on wrong machine, wrong passphrase, or wrong binary.
+Amulet is a CLI tool that encrypts secrets and binds them to the OS-reported machine identifier
+of the sealing host. No plaintext secrets ever touch disk. No `.env` files. No leak surface for
+AI agents or subprocesses. Decryption silently fails on wrong machine_id, wrong passphrase, or
+wrong binary.
 
 ---
 
 ## Milestones
 
 ### M1 — Environment Survey (Phase 2)
-Verify hardware-ID retrieval on each target OS before touching crypto code.
+Verify OS machine identifier retrieval on each target OS before touching crypto code.
 
 | OS      | Source                              | Command / API                          |
 |---------|-------------------------------------|----------------------------------------|

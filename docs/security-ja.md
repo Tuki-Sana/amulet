@@ -4,7 +4,7 @@
 
 ### Locked Mode（デフォルト）
 
-vault を作成したマシン以外では復号できません。パスフレーズとマシンのハードウェア ID を KDF に組み合わせます。
+seal 時と同じ machine_id を持つ環境でのみ復号できます。マシン識別子をパスフレーズと組み合わせて KDF に入力します。
 
 ```
 KDF 入力 = Argon2id(passphrase ‖ 0x00 ‖ machine_id, salt)

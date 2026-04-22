@@ -2,13 +2,15 @@
 
 ## Locked vs Portable 判断表
 
-| 環境 | 推奨モード | 理由 |
-|------|-----------|------|
-| 本番の固定サーバ | **Locked** | machine_id が安定している。vault をコピーされても別マシンでは復号不可 |
-| 開発者の個人 PC | **Locked**（各自） | 各開発者が自分のマシンで seal する |
-| CI（GitHub Actions 等） | **Portable** | ランナーが毎回変わり machine_id が安定しない |
-| コンテナ / Kubernetes | **Portable** | Pod の machine_id が安定しないことが多い |
-| 移行・検証用途 | **Portable** | 別マシンでの復号が意図的に必要な場合 |
+| 環境 | 推奨モード | 運用・設計上の注意 |
+|------|-----------|-------------------|
+| 物理マシン / 固定 VM | **Locked** | 脅威モデル: vault ファイルだけが別ホストへ流出した場合の不正復号を防止。すでにそのマシンにシェルを取られている場合は machine_id も読み取り可能なため、ホスト自体のセキュリティと併用すること。 |
+| VM クローン / テンプレート | **Locked** | **ID 一意化が必須:** 各インスタンス展開後に machine-id を再生成すること（例: `systemd-machine-id-setup`）。ID が重複すると、あるインスタンスで sealed した vault を同一 ID を持つ別インスタンスで復号できてしまい、意図した環境分離が機能しない。 |
+| Windows（Sysprep） | **Locked** | 再一般化で `MachineGuid` が変わる。ゴールデンイメージに sealed vault を焼き込まず、展開後に各ノードで seal すること。変更後は既存の vault が復号不能になるため、下記の移行手順を事前に準備しておく。 |
+| 開発者の個人 PC | **Locked**（各自） | 各開発者が自分のマシンで seal する。 |
+| CI（GitHub Actions 等） | **Portable** | ランナーが毎回変わり machine_id が安定しない。CI のシークレットストアから十分な長さのランダムパスフレーズを注入すること。 |
+| コンテナ / Kubernetes | **Portable** | Pod の machine_id が安定しない・共有されることが多い。パスフレーズの強度とシークレット注入経路の安全性が主な防御線となる。 |
+| 移行・検証用途 | **Portable** | 別マシンでの復号が意図的に必要な場合。 |
 
 > **OS 再インストール・ハードウェア交換時の注意:** machine_id が変わると Locked vault は復号不能になります（Linux: OS 再インストール、macOS: マザーボード交換）。runbook に復旧手順を記載してください。
 
@@ -16,6 +18,25 @@
 - 本番ホスト: サーバ上で seal・unseal（Locked）
 - CI・ステージング: CI プラットフォームのシークレット注入か、強いパスフレーズを使った Portable vault
 - Locked vault はマシン間で共有しない — 各環境が自前で seal する
+
+### 運用詳細
+
+#### Locked の脅威モデル
+
+Locked は KDF 入力を OS が公開するマシン識別子（Linux: `/etc/machine-id`、macOS: `IOPlatformUUID`、Windows: レジストリの `MachineGuid`）にバインドします。vault ファイルだけが攻撃者の手に渡った場合（machine_id が異なる）、認証付き復号が成立せずシークレットは取り出せません（Argon2id へのブルートフォースを前提としなければ破れない）。ただし、攻撃者がすでに同一ホスト上でシェルを持っている場合は machine_id もプロセスメモリや環境変数も読み取れます — ホスト自体のセキュリティ保護が引き続き必要です。
+
+#### VM クローンと machine-id の一意性
+
+Amulet は machine_id 文字列が一致するホストを「同一マシン」と見なします。Linux では VM イメージをクローンした後に ID を再初期化せず使い続けるケースが頻繁に発生します。その結果:
+
+- **ID 重複:** インスタンス A で sealed した vault を、同じ machine_id を持つインスタンス B でも復号できてしまう。開発環境の vault が本番環境で復号できる、といった意図しない共有が無音で発生する。
+- **Seal 後に ID が変わった場合:** seal 時点の machine_id と異なるホストでは永続的に復号不能になる（既存の「OS 再インストール」と同型の問題）。
+
+**推奨:** テンプレートベースの Linux 展開では、ゴールデンイメージで machine-id を空にしておく（`> /etc/machine-id`）ことで、初回起動時に `systemd-machine-id-setup` が自動実行され、seal 前に各インスタンスが固有の ID を持つようになる。
+
+#### CI/CD での Portable モードの利用
+
+GitHub Actions・GitLab CI・Buildkite 等の短命な環境では machine_id が実行ごとに変わる。Portable モードを使い、パスフレーズを CI シークレットから注入すること。machine バインドがない分、パスフレーズが唯一の暗号的防御線となるため、CSPRNG 由来の 32 文字以上のランダム文字列を推奨する。
 
 ---
 

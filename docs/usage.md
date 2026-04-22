@@ -34,10 +34,10 @@ Creates an empty vault file (mode `0600` on Unix). Does not ask for a passphrase
 ## seal
 
 ```sh
-# Locked Mode (default): binds to this machine's hardware ID
+# Locked Mode (default): binds to this machine's OS-reported identifier
 echo -n "your-secret-value" | amulet seal OPENAI_API_KEY --file secrets.vault
 
-# Portable Mode: passphrase only, no hardware binding
+# Portable Mode: passphrase only, no machine identifier binding
 echo -n "your-secret-value" | amulet seal --portable OPENAI_API_KEY --file secrets.vault
 ```
 
@@ -79,7 +79,7 @@ fi
 1. **Passphrase** — same as at `seal`, trailing newline included when piping.
 2. **Vault path** — `--file` points to the correct file and it exists.
 3. **Key name** — exact spelling (case-sensitive). Use `amulet list` to confirm.
-4. **Locked mode** — entry was sealed on this machine. A vault copied from another machine fails.
+4. **Locked mode** — entry was sealed on a machine with the same machine_id. A vault copied to a host with a different machine_id fails.
 5. **Exit code** — `echo $?` (Unix) or `echo $LASTEXITCODE` (PowerShell) should be `1`.
 
 ---

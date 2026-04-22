@@ -4,7 +4,7 @@
 
 ### Locked Mode (default)
 
-The vault entry can only be decrypted on the machine that sealed it. The hardware ID is mixed into the KDF input:
+The vault entry can only be decrypted on a machine with the same machine_id as the one that sealed it. The machine identifier is mixed into the KDF input:
 
 ```
 KDF input = Argon2id(passphrase ‖ 0x00 ‖ machine_id, salt)

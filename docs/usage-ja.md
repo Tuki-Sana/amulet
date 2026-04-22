@@ -34,10 +34,10 @@ amulet init --file secrets.vault
 ## seal
 
 ```sh
-# Locked Mode（デフォルト）: このマシンのハードウェア ID にバインド
+# Locked Mode（デフォルト）: このマシンの OS 識別子にバインド
 echo -n "your-secret-value" | amulet seal OPENAI_API_KEY --file secrets.vault
 
-# Portable Mode: パスフレーズのみ、ハードウェアバインドなし
+# Portable Mode: パスフレーズのみ、マシン識別子バインドなし
 echo -n "your-secret-value" | amulet seal --portable OPENAI_API_KEY --file secrets.vault
 ```
 
@@ -79,7 +79,7 @@ fi
 1. **パスフレーズ** — `seal` 時と同じか。パイプで渡す場合は末尾改行まで一致しているか。
 2. **vault のパス** — `--file` が正しいファイルを指し、ファイルが存在するか。
 3. **キー名** — 大文字・小文字を含め正確か（`amulet list` で確認）。
-4. **Locked モード** — このマシンで seal したエントリか。別マシンからコピーしただけでは失敗します。
+4. **Locked モード** — seal 時と同じ machine_id を持つ環境か。machine_id が異なるホストへコピーしただけでは失敗します。
 5. **終了コード** — `echo $?`（Unix）または `echo $LASTEXITCODE`（PowerShell）が `1` か確認。
 
 ---

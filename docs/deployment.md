@@ -2,13 +2,15 @@
 
 ## Locked vs Portable: decision table
 
-| Environment | Recommended mode | Reason |
-|-------------|-----------------|--------|
-| Production fixed server | **Locked** | Stable machine_id; vault can be copied but not decrypted on another machine |
-| Developer laptop | **Locked** (per person) | Each developer seals on their own machine |
-| CI (GitHub Actions, etc.) | **Portable** | Runner instances change each run — machine_id is unstable |
-| Containers / Kubernetes | **Portable** | Pod machine_id is often unstable |
-| Migration / recovery | **Portable** | Cross-machine decryption is intentional |
+| Environment | Recommended mode | Operational notes |
+|-------------|-----------------|-------------------|
+| Physical machine / fixed VM | **Locked** | Threat model: prevents decryption if only the vault file is exfiltrated to a different host. Does not protect against an attacker who already has a shell on the same machine. |
+| VM clone / template | **Locked** | **Uniqueness required:** regenerate `machine-id` on each instance after cloning (e.g. `systemd-machine-id-setup`). Duplicate IDs mean vaults sealed on one instance can be decrypted on any clone with the same ID — intended isolation does not hold. |
+| Windows (Sysprep) | **Locked** | `MachineGuid` changes on re-generalization. Seal per node after deployment; do not bake a sealed vault into the golden image. If MachineGuid changes after sealing, the vault becomes unrecoverable — follow the migration steps below. |
+| Developer laptop | **Locked** (per person) | Each developer seals on their own machine. |
+| CI (GitHub Actions, etc.) | **Portable** | Runner instances change each run — machine_id is unstable. Inject a sufficiently long random passphrase via CI secrets. |
+| Containers / Kubernetes | **Portable** | Pod machine_id is often unstable or shared. Passphrase strength and secure secret injection are the primary controls. |
+| Migration / recovery | **Portable** | Cross-machine decryption is intentional. |
 
 > **OS reinstall / hardware replacement:** Locked vaults become unrecoverable if machine_id changes. Include a recovery procedure in your runbook (see below).
 
@@ -16,6 +18,25 @@
 - Production hosts: seal and unseal on the server itself (Locked)
 - CI and staging: use your platform's secret injection (GitHub Actions secrets, etc.) or Portable vaults with a strong passphrase
 - Never share a Locked vault across machines — each environment seals its own
+
+### Operational deep-dives
+
+#### Locked threat model
+
+Locked binds the KDF input to the OS-reported machine identifier (`/etc/machine-id` on Linux, `IOPlatformUUID` on macOS, `MachineGuid` in the registry on Windows). This means: if only the vault file reaches an attacker's machine (different machine_id), authenticated decryption fails and the secret is unrecoverable without brute-forcing Argon2id. If the attacker already has a shell on the same host, they can read machine_id and the passphrase from process memory or environment — host-level security is still required.
+
+#### VM clones and machine-id uniqueness
+
+Amulet considers any two hosts with the same machine_id to be the "same machine". On Linux, cloning a VM image without reinitializing the ID is a common deployment mistake. The practical consequence:
+
+- **Duplicate IDs:** vault sealed on instance A can be decrypted on instance B if both share the same machine_id. Environment isolation (e.g. dev vault readable in prod) silently breaks.
+- **machine-id changes after sealing:** if the host's machine-id changes after a vault was sealed there (e.g. `systemd-machine-id-setup` runs, or the OS is reinstalled), that vault can no longer be decrypted on that host — same failure mode as an OS reinstall.
+
+**Recommended practice:** for template-based Linux deployments, blank the machine-id in the golden image (`> /etc/machine-id`) so that `systemd-machine-id-setup` runs automatically on first boot, giving each instance a unique ID before any sealing happens.
+
+#### CI/CD with Portable mode
+
+In ephemeral environments (GitHub Actions, GitLab CI, Buildkite, etc.) machine_id changes with every runner. Use Portable mode and inject the passphrase from your CI secret store. The passphrase is the sole cryptographic control, so treat it like a long random key — 32+ characters from a CSPRNG is a reasonable baseline.
 
 ---
 
