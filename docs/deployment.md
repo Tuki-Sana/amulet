@@ -44,11 +44,13 @@ In ephemeral environments (GitHub Actions, GitLab CI, Buildkite, etc.) machine_i
 
 ### Vault file copy ≠ recoverable backup for Locked vaults
 
-| Backup type | Contents | Recoverable on another machine? |
-|-------------|----------|--------------------------------|
+| Backup type | Contents | Recoverable on a host with a different machine_id? |
+|-------------|----------|----------------------------------------------------|
 | Vault file copy | Encrypted binary | ❌ Locked: requires matching machine_id |
 | Plaintext unsealed on old machine | Raw secret value | ✅ Re-seal on new machine |
 | Portable vault copy | Encrypted binary | ✅ Passphrase alone is sufficient |
+
+> **Note:** VM clones sharing the same machine_id can decrypt each other's Locked vaults. See the [VM clones note in docs/security.md](security.md) for details.
 
 ### Planned machine migration
 

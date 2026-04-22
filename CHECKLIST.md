@@ -17,7 +17,7 @@ a refactor touches the relevant code.
 
 ## Error Handling & Silent Failure
 
-- [x] All decryption errors (`AuthenticationFailed`, wrong machine, file not found, etc.) produce **no** stderr output and exit with code **1**
+- [x] All decryption errors (`AuthenticationFailed` — covers wrong passphrase, wrong machine_id, and corrupt data — file not found, etc.) produce **no** stderr output and exit with code **1**
 - [x] `seal` errors (disk full, permission denied) may print a generic message ("seal failed: …") but **never** include the secret, key name, or derived key in the message
 - [x] `std.debug.panic` and `unreachable` paths are audited — none occur on attacker-controlled input
 - [x] No error union payload containing key material is ever formatted with `{any}` or `{s}`
@@ -101,7 +101,7 @@ a refactor touches the relevant code.
 |---------------------------------|-------------------------------------------------|
 | AI agent reads env vars         | No `.env` — secrets only in vault file          |
 | Process list / argv sniffing    | Secret read from stdin, not argv                |
-| Vault copied to another machine | Argon2id binds to machine-ID in Locked Mode     |
+| Vault copied to a host with a different machine_id | Argon2id binds to machine_id in Locked Mode |
 | Weak passphrase                 | Argon2id stretching with high memory cost       |
 | Cold-boot / memory dump         | `secureZero` after use; no heap allocation      |
 | Log injection / exfiltration    | No logging of secret material; silent failure   |
