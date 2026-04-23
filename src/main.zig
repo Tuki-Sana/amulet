@@ -553,7 +553,7 @@ fn cmdImport(allocator: std.mem.Allocator, args: [][]u8) !void {
         if (wipe_comment) {
             appendWipeCommentMarker(allocator, env_path) catch {
                 std.io.getStdErr().writer().print(
-                    "import: vault written and {s} wiped but appending wipe marker failed\n",
+                    "import: vault written and wiped but appending wipe marker to {s} failed\n",
                     .{env_path},
                 ) catch {};
                 std.process.exit(1);
@@ -591,6 +591,8 @@ fn envContentHasWipeMarkerLine(content: []const u8, marker: []const u8) bool {
     var lines = std.mem.splitScalar(u8, content, '\n');
     while (lines.next()) |raw_line| {
         const no_cr = std.mem.trimRight(u8, raw_line, "\r");
+        // Intentional: trim leading/trailing ASCII whitespace so manually
+        // indented or padded variants of the marker still count as present.
         const t = std.mem.trim(u8, no_cr, &std.ascii.whitespace);
         if (std.mem.eql(u8, t, marker)) return true;
     }
@@ -604,12 +606,11 @@ fn appendWipeCommentMarker(allocator: std.mem.Allocator, path: []const u8) !void
 }
 
 fn appendWipeCommentMarkerInDir(dir: std.fs.Dir, allocator: std.mem.Allocator, path: []const u8) !void {
-    const content = try dir.readFileAlloc(allocator, path, max_secret_len * 256);
-    defer allocator.free(content);
-    if (envContentHasWipeMarkerLine(content, wipe_comment_marker)) return;
-
     const file = try dir.openFile(path, .{ .mode = .read_write });
     defer file.close();
+    const content = try file.readToEndAlloc(allocator, max_secret_len * 256);
+    defer allocator.free(content);
+    if (envContentHasWipeMarkerLine(content, wipe_comment_marker)) return;
     try file.seekFromEnd(0);
     const needs_nl = content.len > 0 and content[content.len - 1] != '\n';
     if (needs_nl) try file.writeAll("\n");
