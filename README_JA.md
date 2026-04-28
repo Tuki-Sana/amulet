@@ -123,6 +123,7 @@ DATABASE_PASSWORD
 | [docs/usage-ja.md](docs/usage-ja.md) | 全コマンドの引数・例・Node.js ラッパー |
 | [docs/security-ja.md](docs/security-ja.md) | vault フォーマット・暗号仕様・脅威モデル |
 | [docs/deployment-ja.md](docs/deployment-ja.md) | Locked/Portable 判断表・移行手順・Docker Compose |
+| [docs/deploy-ubuntu-ja.md](docs/deploy-ubuntu-ja.md) | Ubuntu 24.04 LTS 本番デプロイ（systemd `LoadCredential`） |
 | [docs/getting-started-ja.md](docs/getting-started-ja.md) | ターミナル・PATH・stdin/stdout 入門 |
 
 ---

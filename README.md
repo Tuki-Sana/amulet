@@ -123,6 +123,7 @@ Use Locked for laptops and production servers. Use Portable for CI runners, cont
 | [docs/usage.md](docs/usage.md) | All commands with flags, examples, and Node.js wrapper |
 | [docs/security.md](docs/security.md) | Vault format, crypto spec, threat model |
 | [docs/deployment.md](docs/deployment.md) | Locked vs Portable decision table, migration, Docker Compose |
+| [docs/deploy-ubuntu.md](docs/deploy-ubuntu.md) | Ubuntu 24.04 LTS production deployment with systemd `LoadCredential` |
 | [docs/getting-started.md](docs/getting-started.md) | Terminal, PATH, stdin/stdout — for newcomers |
 
 ---
