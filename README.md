@@ -156,7 +156,9 @@ Use Locked for laptops and production servers. Use Portable for CI runners, cont
 | [docs/security.md](docs/security.md) | Vault format, crypto spec, threat model |
 | [docs/deployment.md](docs/deployment.md) | Locked vs Portable decision table, migration, Docker Compose |
 | [docs/deploy-ubuntu.md](docs/deploy-ubuntu.md) | Ubuntu 24.04 LTS production deployment with systemd `LoadCredential` |
+| [docs/deploy-rootless-systemd.md](docs/deploy-rootless-systemd.md) | Rootless deployment with user systemd (rootless Podman, non-root processes) |
 | [docs/getting-started.md](docs/getting-started.md) | Terminal, PATH, stdin/stdout — for newcomers |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Silent failure debugging, startup timeouts, passphrase rotation, OS reinstall |
 
 ---
 
@@ -187,13 +189,19 @@ amulet/
 │   ├── crypto.zig          # Argon2id + ChaCha20-Poly1305 crypto core
 │   └── main.zig            # CLI dispatch and vault I/O
 ├── docs/
-│   ├── usage.md            # CLI reference
+│   ├── usage.md                       # CLI reference
 │   ├── usage-ja.md
-│   ├── security.md         # Vault format, crypto spec, threat model
+│   ├── security.md                    # Vault format, crypto spec, threat model
 │   ├── security-ja.md
-│   ├── deployment.md       # Deployment, migration, Docker Compose
+│   ├── deployment.md                  # Deployment, migration, Docker Compose
 │   ├── deployment-ja.md
-│   ├── getting-started.md  # Terminal basics for newcomers
+│   ├── deploy-ubuntu.md               # Ubuntu production deploy (root systemd + LoadCredential)
+│   ├── deploy-ubuntu-ja.md
+│   ├── deploy-rootless-systemd.md     # Rootless deploy (user systemd, rootless Podman)
+│   ├── deploy-rootless-systemd-ja.md
+│   ├── troubleshooting.md             # Silent failure debugging, timeouts, passphrase rotation
+│   ├── troubleshooting-ja.md
+│   ├── getting-started.md             # Terminal basics for newcomers
 │   └── getting-started-ja.md
 ├── wrappers/
 │   └── node/

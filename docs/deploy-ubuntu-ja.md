@@ -136,6 +136,43 @@ sudo systemctl status myapp
 
 ---
 
+## デプロイ後のシークレット更新
+
+### 通常の更新（1キー）
+
+```sh
+echo -n "new_secret_value" | \
+  sudo amulet seal SECRET_KEY --file /etc/amulet/secrets.vault
+sudo systemctl restart myapp
+```
+
+### SSH が切断されやすい場合（テンポラリファイルを使った一括更新）
+
+対話的な `seal` は SSH セッションが入力途中で切れると中断されます。
+VPS 上での一括更新では、先に値をテンポラリファイルへ書き出しておき、
+非対話で import する方法が安全です:
+
+```sh
+# 新しい値をテンポラリファイルに書き込む（import 後すぐ削除すること）
+sudo bash -c 'cat > /tmp/amulet-update.env' <<'EOF'
+SECRET_KEY=new_value
+ANOTHER_KEY=another_value
+EOF
+
+sudo amulet import \
+  --env-file /tmp/amulet-update.env \
+  --file /etc/amulet/secrets.vault \
+  < /etc/amulet/passphrase
+
+sudo rm -f /tmp/amulet-update.env
+sudo systemctl restart myapp
+```
+
+> Linux の `/tmp` はデフォルトで全ユーザーから参照可能です。
+> import 直後にテンポラリファイルを削除してください。
+
+---
+
 ## 物理サーバ向け: TPM2 を使ったより強固な構成
 
 TPM2 チップを搭載したベアメタルサーバでは、`LoadCredentialEncrypted` を使うと

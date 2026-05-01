@@ -128,9 +128,12 @@ amulet import --env-file .env --file secrets.vault --portable
 ```
 
 - Reads `KEY=VALUE` lines (blank lines and `#` comments are skipped).
-- Quotes and `export KEY=…` are **not** supported — strip them before importing.
-- The passphrase is prompted once for all entries.
 - Existing keys are overwritten.
+
+> **Note:** Quotes and `export KEY=…` syntax are **not** supported.
+> A line like `export API_KEY=foo` will be skipped silently — remove the
+> `export` prefix before importing.
+- The passphrase is prompted once for all entries.
 
 `--manifest <path>` writes one key name per line (truncates if it exists). Commit this file instead of `.env` so teammates know which secrets are required.
 

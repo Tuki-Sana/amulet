@@ -156,7 +156,9 @@ DATABASE_PASSWORD
 | [docs/security-ja.md](docs/security-ja.md) | vault フォーマット・暗号仕様・脅威モデル |
 | [docs/deployment-ja.md](docs/deployment-ja.md) | Locked/Portable 判断表・移行手順・Docker Compose |
 | [docs/deploy-ubuntu-ja.md](docs/deploy-ubuntu-ja.md) | Ubuntu 24.04 LTS 本番デプロイ（systemd `LoadCredential`） |
+| [docs/deploy-rootless-systemd-ja.md](docs/deploy-rootless-systemd-ja.md) | rootless デプロイ（user systemd・rootless Podman・非 root プロセス向け） |
 | [docs/getting-started-ja.md](docs/getting-started-ja.md) | ターミナル・PATH・stdin/stdout 入門 |
+| [docs/troubleshooting-ja.md](docs/troubleshooting-ja.md) | サイレント失敗のデバッグ・起動タイムアウト・パスフレーズローテーション・OS 再インストール |
 
 ---
 
@@ -187,13 +189,19 @@ amulet/
 │   ├── crypto.zig          # Argon2id + ChaCha20-Poly1305 暗号コア
 │   └── main.zig            # CLI ディスパッチと vault I/O
 ├── docs/
-│   ├── usage-ja.md         # CLI リファレンス
-│   ├── security-ja.md      # vault フォーマット・暗号仕様・脅威モデル
-│   ├── deployment-ja.md    # 環境別運用・移行・Docker Compose
-│   ├── getting-started-ja.md  # ターミナル入門
+│   ├── usage-ja.md                    # CLI リファレンス
 │   ├── usage.md
+│   ├── security-ja.md                 # vault フォーマット・暗号仕様・脅威モデル
 │   ├── security.md
+│   ├── deployment-ja.md               # 環境別運用・移行・Docker Compose
 │   ├── deployment.md
+│   ├── deploy-ubuntu-ja.md            # Ubuntu 本番デプロイ（root systemd + LoadCredential）
+│   ├── deploy-ubuntu.md
+│   ├── deploy-rootless-systemd-ja.md  # rootless デプロイ（user systemd・rootless Podman）
+│   ├── deploy-rootless-systemd.md
+│   ├── troubleshooting-ja.md          # サイレント失敗のデバッグ・タイムアウト・ローテーション
+│   ├── troubleshooting.md
+│   ├── getting-started-ja.md          # ターミナル入門
 │   └── getting-started.md
 ├── wrappers/
 │   └── node/

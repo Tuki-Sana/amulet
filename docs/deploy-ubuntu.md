@@ -140,6 +140,43 @@ sudo systemctl status myapp
 
 ---
 
+## Updating secrets after deployment
+
+### Normal update (one key)
+
+```sh
+echo -n "new_secret_value" | \
+  sudo amulet seal SECRET_KEY --file /etc/amulet/secrets.vault
+sudo systemctl restart myapp
+```
+
+### When SSH may disconnect (bulk update via temp file)
+
+Interactive `seal` prompts can be interrupted if the SSH session drops
+mid-input. For bulk updates on a VPS, write the new values to a temp file
+first, then import — the operation completes in one non-interactive step:
+
+```sh
+# Write new values to a temp file (delete immediately after import)
+sudo bash -c 'cat > /tmp/amulet-update.env' <<'EOF'
+SECRET_KEY=new_value
+ANOTHER_KEY=another_value
+EOF
+
+sudo amulet import \
+  --env-file /tmp/amulet-update.env \
+  --file /etc/amulet/secrets.vault \
+  < /etc/amulet/passphrase
+
+sudo rm -f /tmp/amulet-update.env
+sudo systemctl restart myapp
+```
+
+> `/tmp` is world-readable on most Linux systems. Delete the temp file
+> immediately after import.
+
+---
+
 ## Physical server: stronger option with TPM2
 
 On bare-metal servers that have a TPM2 chip, `LoadCredentialEncrypted` binds
