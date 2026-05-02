@@ -161,6 +161,7 @@ Use Locked for laptops and production servers. Use Portable for CI runners, cont
 | [docs/deploy-rootless-systemd.md](docs/deploy-rootless-systemd.md) | Rootless deployment with user systemd (rootless Podman, non-root processes) |
 | [docs/getting-started.md](docs/getting-started.md) | Terminal, PATH, stdin/stdout — for newcomers |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Silent failure debugging, startup timeouts, passphrase rotation, OS reinstall |
+| [docs/migration-away.md](docs/migration-away.md) | Exporting secrets and removing Amulet from a project |
 
 ---
 
@@ -204,7 +205,9 @@ amulet/
 │   ├── troubleshooting.md             # Silent failure debugging, timeouts, passphrase rotation
 │   ├── troubleshooting-ja.md
 │   ├── getting-started.md             # Terminal basics for newcomers
-│   └── getting-started-ja.md
+│   ├── getting-started-ja.md
+│   ├── migration-away.md              # Exporting secrets and removing Amulet
+│   └── migration-away-ja.md
 ├── wrappers/
 │   └── node/
 │       └── amulet.ts       # Node.js/TypeScript wrapper

@@ -9,3 +9,5 @@ prompt*.md
 startup-prompt.md
 prompt/*.md
 /prompt
+
+docs_tmp/

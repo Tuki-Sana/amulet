@@ -161,6 +161,7 @@ DATABASE_PASSWORD
 | [docs/deploy-rootless-systemd-ja.md](docs/deploy-rootless-systemd-ja.md) | rootless デプロイ（user systemd・rootless Podman・非 root プロセス向け） |
 | [docs/getting-started-ja.md](docs/getting-started-ja.md) | ターミナル・PATH・stdin/stdout 入門 |
 | [docs/troubleshooting-ja.md](docs/troubleshooting-ja.md) | サイレント失敗のデバッグ・起動タイムアウト・パスフレーズローテーション・OS 再インストール |
+| [docs/migration-away-ja.md](docs/migration-away-ja.md) | シークレットのエクスポートとプロジェクトからの Amulet 削除 |
 
 ---
 
@@ -204,7 +205,9 @@ amulet/
 │   ├── troubleshooting-ja.md          # サイレント失敗のデバッグ・タイムアウト・ローテーション
 │   ├── troubleshooting.md
 │   ├── getting-started-ja.md          # ターミナル入門
-│   └── getting-started.md
+│   ├── getting-started.md
+│   ├── migration-away-ja.md           # シークレットのエクスポートと Amulet の削除
+│   └── migration-away.md
 ├── wrappers/
 │   └── node/
 │       └── amulet.ts       # Node.js/TypeScript ラッパー
