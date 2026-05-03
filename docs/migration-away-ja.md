@@ -43,7 +43,7 @@ done < <(amulet list --file "$VAULT")
 echo "エクスポート完了: $OUTPUT"
 ```
 
-**Windows（PowerShell）** の場合は、キーを 1 つずつ手動で unseal してください。上記のスクリプトは bash 専用です。
+**Windows（PowerShell）** の場合は、キーを 1 つずつ手動で unseal してください。上記のスクリプトは bash 専用です。（※ WSL 環境を使用している場合は、Linux と同じく上記の bash スクリプトが実行可能です）
 
 ---
 
@@ -94,7 +94,7 @@ sudo rm /usr/local/bin/amulet
 which amulet
 ```
 
-**Windows** の場合は `amulet.exe` を置いた場所から削除し、Amulet のためだけに追加したディレクトリを `PATH` からも削除してください。
+**Windows** の場合は `amulet.exe` を置いた場所から削除し、Amulet のためだけに追加したディレクトリを `PATH` からも削除してください。（※ WSL 環境にインストールした場合は、上記の Linux と同じ手順で削除してください）
 
 **ステップ 1 で作成した平文エクスポートファイルを削除する:**
 
