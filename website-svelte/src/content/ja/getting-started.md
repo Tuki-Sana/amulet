@@ -59,8 +59,9 @@ echo -n "my-password-123" | amulet seal MY_SECRET --file secrets.vault
 コマンドを打つと、**パスフレーズ** の入力を求められます。
 このパスフレーズは、後でデータを取り出す際に必要になるので、忘れないようにしてください。
 
-> [!TIP]
-> `secrets.vault` というファイルが作成されます。これは暗号化されているため、GitHubにコミットしても安全です。
+::: tip
+`secrets.vault` というファイルが作成されます。これは暗号化されているため、GitHubにコミットしても安全です。
+:::
 
 ---
 
@@ -86,8 +87,9 @@ export VAULT_PASSPHRASE="your-passphrase"
 amulet unseal MY_SECRET --file secrets.vault
 ```
 
-> [!CAUTION]
-> 共有マシンや、他人が見る可能性のある環境では、環境変数にパスフレーズを置くことは避けてください。
+::: caution
+共有マシンや、他人が見る可能性のある環境では、環境変数にパスフレーズを置くことは避けてください。
+:::
 
 ---
 

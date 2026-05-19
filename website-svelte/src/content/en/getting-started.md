@@ -57,8 +57,9 @@ echo -n "my-password-123" | amulet seal MY_SECRET --file secrets.vault
 
 You will be prompted for a **passphrase**. This passphrase is required to retrieve your data later, so don't forget it!
 
-> [!TIP]
-> A file named `secrets.vault` will be created. It's encrypted and safe to commit to GitHub.
+::: tip
+A file named `secrets.vault` will be created. It's encrypted and safe to commit to GitHub.
+:::
 
 ---
 
@@ -83,8 +84,9 @@ export VAULT_PASSPHRASE="your-passphrase"
 amulet unseal MY_SECRET --file secrets.vault
 ```
 
-> [!CAUTION]
-> Avoid setting the passphrase in environment variables on shared machines or environments where others might see your screen.
+::: caution
+Avoid setting the passphrase in environment variables on shared machines or environments where others might see your screen.
+:::
 
 ---
 

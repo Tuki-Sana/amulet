@@ -22,6 +22,13 @@ html, body {
 	margin: 2rem 0 0.75rem;
 	scroll-margin-top: 5rem;
 }
+.prose h1 code, .prose h2 code, .prose h3 code, .prose h4 code {
+	font-size: 0.9em;
+	background: none;
+	border: none;
+	padding: 0;
+	color: inherit;
+}
 
 @keyframes heading-flash {
 	0%   { color: #fcf9f2; text-shadow: 0 0 16px rgba(197,160,89,0.6); }
