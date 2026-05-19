@@ -32,7 +32,7 @@ Amulet は、秘密情報（API キー・トークン・パスワード等）を
 
 ## インストール
 
-[GitHub Releases](https://github.com/Tuki-Sana/amulet/releases) から最新バイナリをダウンロードしてください:
+[GitHub Releases](https://github.com/tsukasa-art/amulet/releases) から最新バイナリをダウンロードしてください:
 
 | OS | ファイル |
 |---|---|
@@ -68,7 +68,7 @@ amulet version
 ```sh
 # サーバー上で実行（Linux x86_64）
 curl -fL -o /tmp/amulet \
-  https://github.com/Tuki-Sana/amulet/releases/latest/download/amulet-linux-x86_64
+  https://github.com/tsukasa-art/amulet/releases/latest/download/amulet-linux-x86_64
 sudo install -m 0755 /tmp/amulet /usr/local/bin/amulet
 amulet version
 ```
@@ -151,6 +151,8 @@ DATABASE_PASSWORD
 ---
 
 ## ドキュメント
+
+**ドキュメントサイト:** [amulet.tsukasa-art.com](https://amulet.tsukasa-art.com)
 
 | ファイル | 内容 |
 |---------|------|

@@ -32,7 +32,7 @@ Amulet is a CLI tool that encrypts secrets (API keys, tokens, passwords, etc.) a
 
 ## Installation
 
-Download the latest binary from [GitHub Releases](https://github.com/Tuki-Sana/amulet/releases):
+Download the latest binary from [GitHub Releases](https://github.com/tsukasa-art/amulet/releases):
 
 | OS | File |
 |---|---|
@@ -68,7 +68,7 @@ You can either download directly on the server or copy from your local machine.
 ```sh
 # On the server (Linux x86_64)
 curl -fL -o /tmp/amulet \
-  https://github.com/Tuki-Sana/amulet/releases/latest/download/amulet-linux-x86_64
+  https://github.com/tsukasa-art/amulet/releases/latest/download/amulet-linux-x86_64
 sudo install -m 0755 /tmp/amulet /usr/local/bin/amulet
 amulet version
 ```
@@ -151,6 +151,8 @@ Use Locked for laptops and production servers. Use Portable for CI runners, cont
 ---
 
 ## Docs
+
+**Documentation site:** [amulet.tsukasa-art.com](https://amulet.tsukasa-art.com)
 
 | Document | Contents |
 |----------|----------|
