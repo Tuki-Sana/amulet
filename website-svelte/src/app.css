@@ -67,6 +67,8 @@ html, body {
 	background: rgba(197,160,89,0.04);
 	border-radius: 0 6px 6px 0;
 }
+.prose blockquote p:first-child { margin-top: 0; }
+.prose blockquote p:last-child { margin-bottom: 0; }
 
 .prose hr {
 	border: none;
